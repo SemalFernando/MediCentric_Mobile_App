@@ -1,20 +1,24 @@
-import React from 'react';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import {startNetworkLogging} from 'react-native-network-logger';
-import {Text, View,} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import SplashScreen from './src/pages/SplashScreen';
+import WelcomeScreen from './src/pages/WelcomeScreen';
 
 const App = () => {
-  React.useEffect(() => {
-    startNetworkLogging();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <SafeAreaProvider>
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ textAlign: 'center', fontSize: 20 }}>Hello  :)</Text>
-    </View>
-    </SafeAreaProvider>
-  );
+  if (isLoading) {
+    return <SplashScreen />;
+  }
+
+  return <WelcomeScreen />;
 };
 
 export default App;
