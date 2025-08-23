@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import LoginScreen from './LoginScreen';
+import SignUpScreen from './SignUpScreen'; // Import the SignUpScreen
 
 const WelcomeScreen = () => {
   const [showLogin, setShowLogin] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false); // State for SignUpScreen
 
   if (showLogin) {
     return <LoginScreen onBack={() => setShowLogin(false)} />;
+  }
+
+  if (showSignUp) {
+    return <SignUpScreen onBack={() => setShowSignUp(false)} />;
   }
 
   return (
@@ -31,7 +37,10 @@ const WelcomeScreen = () => {
         <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.signupButton}>
+      <TouchableOpacity 
+        style={styles.signupButton}
+        onPress={() => setShowSignUp(true)} // Add onPress for SignUp
+      >
         <Text style={styles.signupButtonText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
@@ -74,7 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     lineHeight: 22,
     paddingHorizontal: 20,
-    marginTop: 80, // Added this to push down the description and buttons
+    marginTop: 80,
   },
   loginButton: {
     backgroundColor: '#2260FF',
