@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
 const LoginScreen = ({ onBack }) => {
   const [email, setEmail] = useState('');
@@ -11,9 +11,9 @@ const LoginScreen = ({ onBack }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Log in</Text>
+        <Text style={styles.headerTitle}>Log In</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -24,13 +24,18 @@ const LoginScreen = ({ onBack }) => {
         Log in to access care and track your wellness with Medi Centric
       </Text>
 
-      {/* Email Input */}
+      {/* Email Section */}
+      <Text style={styles.inputLabel}>Email or phone number</Text>
       <View style={styles.inputContainer}>
-        <Text style={styles.inputIcon}>📧</Text>
+        <Image 
+          source={require('../assets/email-icon.png')} 
+          style={styles.inputIcon}
+          resizeMode="contain"
+        />
         <TextInput
           style={styles.input}
-          placeholder="Email or phone number"
-          placeholderTextColor="#999"
+          placeholder="john.doe@gmail.com"
+          placeholderTextColor="#809CFF"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -38,19 +43,28 @@ const LoginScreen = ({ onBack }) => {
         />
       </View>
 
-      {/* Password Input */}
+      {/* Password Section */}
+      <Text style={styles.inputLabel}>Password</Text>
       <View style={styles.inputContainer}>
-        <Text style={styles.inputIcon}>🔒</Text>
+        <Image 
+          source={require('../assets/password-icon.png')} 
+          style={styles.inputIcon}
+          resizeMode="contain"
+        />
         <TextInput
           style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
+          placeholder="****************"
+          placeholderTextColor="#809CFF"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-          <Text>{showPassword ? '🙈' : '👁️'}</Text>
+          <Image 
+            source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
+            style={styles.eyeIconImage}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 
@@ -74,10 +88,10 @@ const LoginScreen = ({ onBack }) => {
       {/* Social Login Buttons */}
       <View style={styles.socialButtons}>
         <TouchableOpacity style={styles.socialButton}>
-          <Text style={styles.socialText}>G</Text>
+          <Image source={require('../assets/google.png')} style={styles.socialIcon} resizeMode="contain" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.socialButton}>
-          <Text style={styles.socialText}>f</Text>
+          <Image source={require('../assets/facebook.png')} style={styles.socialIcon} resizeMode="contain" />
         </TouchableOpacity>
       </View>
 
@@ -102,61 +116,79 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 30,
-    marginTop: 10,
+    marginBottom: 20,
+    marginTop: 30,
   },
   backButton: {
     padding: 5,
   },
   backText: {
-    fontSize: 24,
+    fontSize: 50, // Made bigger
     color: '#2260FF',
+    fontWeight: 'regular',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24, // Made bigger
     fontWeight: '600',
     color: '#2260FF',
     textAlign: 'center',
     flex: 1,
+    marginTop: 5,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: '600',
     color: '#2260FF',
-    marginBottom: 10,
+    marginBottom: 5,
     textAlign: 'left',
     alignSelf: 'flex-start',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#070707',
     marginBottom: 30,
     textAlign: 'left',
     alignSelf: 'flex-start',
-    lineHeight: 20,
+    lineHeight: 15,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2260FF',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    marginLeft: 5,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: '#ECF1FF', // Changed border color
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 20,
     paddingHorizontal: 15,
     height: 50,
+    backgroundColor: '#ECF1FF', // Changed background color
   },
   inputIcon: {
+    width: 20,
+    height: 20,
     marginRight: 10,
-    fontSize: 16,
+    tintColor: '#809CFF', // Icon color
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 16,
-    color: '#070707',
+    color: '#809CFF', // Changed text color
   },
   eyeIcon: {
     padding: 5,
+  },
+  eyeIconImage: {
+    width: 20,
+    height: 20,
+    tintColor: '#809CFF', // Eye icon color
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -165,6 +197,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: '#2260FF',
     fontSize: 14,
+    fontWeight: '600',
   },
   loginButton: {
     backgroundColor: '#2260FF',
@@ -211,9 +244,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EEE',
   },
-  socialText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  socialIcon: {
+    width: 24,
+    height: 24,
   },
   signupContainer: {
     flexDirection: 'row',
