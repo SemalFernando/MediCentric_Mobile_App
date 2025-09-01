@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import LoginScreen from './LoginScreen';
-import SignUpScreen from './SignUpScreen'; // Import the SignUpScreen
+import LoginScreen from '../pages/LoginScreen';
+import SignUpScreen from '../pages/SignupScreen';
 
 const WelcomeScreen = () => {
   const [showLogin, setShowLogin] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false); // State for SignUpScreen
+  const [showSignUp, setShowSignUp] = useState(false);
 
   if (showLogin) {
-    return <LoginScreen onBack={() => setShowLogin(false)} />;
+    return <LoginScreen 
+      onBack={() => setShowLogin(false)} 
+      onNavigateToSignUp={() => {
+        setShowLogin(false);
+        setShowSignUp(true);
+      }}
+    />;
   }
 
   if (showSignUp) {
-    return <SignUpScreen onBack={() => setShowSignUp(false)} />;
+    return <SignUpScreen 
+      onBack={() => setShowSignUp(false)} 
+      onNavigateToLogin={() => {
+        setShowSignUp(false);
+        setShowLogin(true);
+      }}
+    />;
   }
 
   return (
@@ -39,7 +51,7 @@ const WelcomeScreen = () => {
 
       <TouchableOpacity 
         style={styles.signupButton}
-        onPress={() => setShowSignUp(true)} // Add onPress for SignUp
+        onPress={() => setShowSignUp(true)}
       >
         <Text style={styles.signupButtonText}>Sign Up</Text>
       </TouchableOpacity>

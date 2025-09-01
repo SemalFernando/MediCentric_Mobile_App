@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 
-const SignUpScreen = ({ onBack }) => {
+const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,11 +10,14 @@ const SignUpScreen = ({ onBack }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <View style={styles.mainContainer}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView 
-        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -153,26 +156,24 @@ const SignUpScreen = ({ onBack }) => {
         {/* Login Link */}
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Already have an account? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={onNavigateToLogin}>
             <Text style={styles.loginLink}>Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  mainContainer: {
+  container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  scrollView: {
-    flex: 1,
-  },
   scrollContent: {
+    flexGrow: 1,
     padding: 20,
-    paddingBottom: 40, // Extra padding at the bottom
+    paddingBottom: 50,
   },
   header: {
     flexDirection: 'row',

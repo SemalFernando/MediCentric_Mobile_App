@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
-const LoginScreen = ({ onBack }) => {
+const LoginScreen = ({ onBack, onNavigateToSignUp }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -81,7 +81,7 @@ const LoginScreen = ({ onBack }) => {
       {/* Divider */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or sign up with</Text>
+        <Text style={styles.dividerText}>or login with</Text>
         <View style={styles.dividerLine} />
       </View>
 
@@ -98,7 +98,7 @@ const LoginScreen = ({ onBack }) => {
       {/* Sign Up Link */}
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don't have an account? </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onNavigateToSignUp}>
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
@@ -123,12 +123,12 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   backText: {
-    fontSize: 50, // Made bigger
+    fontSize: 50,
     color: '#2260FF',
     fontWeight: 'regular',
   },
   headerTitle: {
-    fontSize: 24, // Made bigger
+    fontSize: 24,
     fontWeight: '600',
     color: '#2260FF',
     textAlign: 'center',
@@ -163,24 +163,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ECF1FF', // Changed border color
+    borderColor: '#ECF1FF',
     borderRadius: 10,
     marginBottom: 20,
     paddingHorizontal: 15,
     height: 50,
-    backgroundColor: '#ECF1FF', // Changed background color
+    backgroundColor: '#ECF1FF',
   },
   inputIcon: {
     width: 20,
     height: 20,
     marginRight: 10,
-    tintColor: '#809CFF', // Icon color
+    tintColor: '#809CFF',
   },
   input: {
     flex: 1,
     height: '100%',
     fontSize: 16,
-    color: '#809CFF', // Changed text color
+    color: '#809CFF',
   },
   eyeIcon: {
     padding: 5,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   eyeIconImage: {
     width: 20,
     height: 20,
-    tintColor: '#809CFF', // Eye icon color
+    tintColor: '#809CFF',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signupText: {
-    color: '#666',
+    color: '##666',
     fontSize: 14,
   },
   signupLink: {
