@@ -2,28 +2,59 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import LoginScreen from '../pages/LoginScreen';
 import SignUpScreen from '../pages/SignupScreen';
+import SetPasswordScreen from '../pages/SetPasswordScreen';
 
 const WelcomeScreen = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [showSetPassword, setShowSetPassword] = useState(false);
+  const [previousScreen, setPreviousScreen] = useState('welcome'); // Track previous screen
 
   if (showLogin) {
     return <LoginScreen 
-      onBack={() => setShowLogin(false)} 
+      onBack={() => {
+        setShowLogin(false);
+        setPreviousScreen('welcome');
+      }} 
       onNavigateToSignUp={() => {
         setShowLogin(false);
         setShowSignUp(true);
+        setPreviousScreen('login');
+      }}
+      onNavigateToSetPassword={() => {
+        setShowLogin(false);
+        setShowSetPassword(true);
+        setPreviousScreen('login');
       }}
     />;
   }
 
   if (showSignUp) {
     return <SignUpScreen 
-      onBack={() => setShowSignUp(false)} 
+      onBack={() => {
+        setShowSignUp(false);
+        // Go back to the screen that opened signup
+        if (previousScreen === 'login') {
+          setShowLogin(true);
+        }
+      }} 
       onNavigateToLogin={() => {
         setShowSignUp(false);
         setShowLogin(true);
+        setPreviousScreen('signup');
       }}
+    />;
+  }
+
+  if (showSetPassword) {
+    return <SetPasswordScreen 
+      onBack={() => {
+        setShowSetPassword(false);
+        // Go back to the screen that opened set password (should be login)
+        if (previousScreen === 'login') {
+          setShowLogin(true);
+        }
+      }} 
     />;
   }
 
@@ -44,14 +75,20 @@ const WelcomeScreen = () => {
 
       <TouchableOpacity
         style={styles.loginButton}
-        onPress={() => setShowLogin(true)}
+        onPress={() => {
+          setShowLogin(true);
+          setPreviousScreen('welcome');
+        }}
       >
         <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
         style={styles.signupButton}
-        onPress={() => setShowSignUp(true)}
+        onPress={() => {
+          setShowSignUp(true);
+          setPreviousScreen('welcome');
+        }}
       >
         <Text style={styles.signupButtonText}>Sign Up</Text>
       </TouchableOpacity>

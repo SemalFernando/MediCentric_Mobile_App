@@ -125,12 +125,12 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   descriptionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#070707',
-    textAlign: 'center',
+    textAlign: 'left',
     marginBottom: 30,
-    lineHeight: 20,
-    paddingHorizontal: 20,
+    alignSelf: 'flex-start',
+    lineHeight: 15,
   },
   inputLabel: {
     fontSize: 16,

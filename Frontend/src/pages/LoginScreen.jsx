@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
-const LoginScreen = ({ onBack, onNavigateToSignUp }) => {
+const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -69,7 +69,10 @@ const LoginScreen = ({ onBack, onNavigateToSignUp }) => {
       </View>
 
       {/* Forgot Password */}
-      <TouchableOpacity style={styles.forgotPassword}>
+      <TouchableOpacity 
+        style={styles.forgotPassword}
+        onPress={onNavigateToSetPassword}
+      >
         <Text style={styles.forgotPasswordText}>Forgot password?</Text>
       </TouchableOpacity>
 
@@ -254,7 +257,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signupText: {
-    color: '##666',
+    color: '#666',
     fontSize: 14,
   },
   signupLink: {
