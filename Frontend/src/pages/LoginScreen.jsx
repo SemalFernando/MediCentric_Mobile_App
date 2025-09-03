@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
-const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) => {
+const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNavigateToHome }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,8 +27,8 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) =>
       {/* Email Section */}
       <Text style={styles.inputLabel}>Email or phone number</Text>
       <View style={styles.inputContainer}>
-        <Image 
-          source={require('../assets/email-icon.png')} 
+        <Image
+          source={require('../assets/email-icon.png')}
           style={styles.inputIcon}
           resizeMode="contain"
         />
@@ -46,8 +46,8 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) =>
       {/* Password Section */}
       <Text style={styles.inputLabel}>Password</Text>
       <View style={styles.inputContainer}>
-        <Image 
-          source={require('../assets/password-icon.png')} 
+        <Image
+          source={require('../assets/password-icon.png')}
           style={styles.inputIcon}
           resizeMode="contain"
         />
@@ -60,8 +60,8 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) =>
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-          <Image 
-            source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
+          <Image
+            source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')}
             style={styles.eyeIconImage}
             resizeMode="contain"
           />
@@ -69,7 +69,7 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) =>
       </View>
 
       {/* Forgot Password */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.forgotPassword}
         onPress={onNavigateToSetPassword}
       >
@@ -77,7 +77,10 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword }) =>
       </TouchableOpacity>
 
       {/* Login Button */}
-      <TouchableOpacity style={styles.loginButton}>
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={onNavigateToHome} // Add this
+      >
         <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
 

@@ -4,11 +4,11 @@ import LoginScreen from '../pages/LoginScreen';
 import SignUpScreen from '../pages/SignupScreen';
 import SetPasswordScreen from '../pages/SetPasswordScreen';
 
-const WelcomeScreen = () => {
+const WelcomeScreen = ({ onNavigateToHome }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [showSetPassword, setShowSetPassword] = useState(false);
-  const [previousScreen, setPreviousScreen] = useState('welcome'); // Track previous screen
+  const [previousScreen, setPreviousScreen] = useState('welcome');
 
   if (showLogin) {
     return <LoginScreen 
@@ -26,6 +26,7 @@ const WelcomeScreen = () => {
         setShowSetPassword(true);
         setPreviousScreen('login');
       }}
+      onNavigateToHome={onNavigateToHome} // Add this prop
     />;
   }
 
@@ -33,7 +34,6 @@ const WelcomeScreen = () => {
     return <SignUpScreen 
       onBack={() => {
         setShowSignUp(false);
-        // Go back to the screen that opened signup
         if (previousScreen === 'login') {
           setShowLogin(true);
         }
@@ -50,7 +50,6 @@ const WelcomeScreen = () => {
     return <SetPasswordScreen 
       onBack={() => {
         setShowSetPassword(false);
-        // Go back to the screen that opened set password (should be login)
         if (previousScreen === 'login') {
           setShowLogin(true);
         }
