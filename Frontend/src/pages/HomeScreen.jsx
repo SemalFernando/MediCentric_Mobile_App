@@ -83,78 +83,71 @@ const HomeScreen = () => {
             {/* Second Row - CAD6FF Background */}
             <View style={styles.secondRow}>
                 <View style={styles.cardsContainer}>
-                    {/* Patient Name Card */}
+                    {/* Patient Name Card - Single line */}
                     <View style={styles.patientNameCard}>
-                        <Text style={styles.patientNameLabel}>Patient Name:</Text>
+                        <Text style={styles.patientNameLabel}>Patient Name: </Text>
                         <Text style={styles.patientNameValue}>Mr. Ryan Ravikumar</Text>
                     </View>
 
-                    {/* Blood Type and Recent Lab Reports */}
-                    <View style={styles.row}>
-                        {/* Blood Type Card */}
-                        <View style={styles.bloodTypeCard}>
-                            <Text style={styles.bloodTypeLabel}>Blood Type:</Text>
-                            <Text style={styles.bloodTypeValue}>O+</Text>
+                    {/* Two Columns Layout */}
+                    <View style={styles.twoColumns}>
+                        {/* Left Column */}
+                        <View style={styles.leftColumn}>
+                            {/* Blood Type Card */}
+                            <View style={styles.bloodTypeCard}>
+                                <View style={styles.bloodTypeRow}>
+                                    <Text style={styles.bloodTypeLabel}>Blood Type: </Text>
+                                    <Text style={styles.bloodTypeValue}>O+</Text>
+                                </View>
+                            </View>
+
+                            {/* Allergies Card */}
+                            <View style={styles.allergiesCard}>
+                                <Text style={styles.cardTitleCenter}>Allergies</Text>
+                                <View style={styles.cardDivider} />
+                                <View style={styles.allergyItem}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <Text style={styles.allergyText}>Penicillin, Severity: Moderate</Text>
+                                </View>
+                                <View style={styles.allergyItem}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <Text style={styles.allergyText}>Peanuts, Severity: Severe</Text>
+                                </View>
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity style={styles.viewMoreButton}>
+                                        <Text style={styles.viewMoreText}>view more</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
 
-                        {/* Recent Lab Reports Card */}
-                        <View style={styles.labReportsCard}>
-                            <Text style={styles.cardTitleCenter}>Recent Lab Reports</Text>
-                            <View style={styles.cardDivider} />
-                            <View style={styles.reportItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.reportText}>Complete Blood Count (CBC) Date: July 10, 2025 - Status: Normal</Text>
+                        {/* Right Column - Recent Lab Reports Card */}
+                        <View style={styles.rightColumn}>
+                            <View style={styles.labReportsCard}>
+                                <Text style={styles.cardTitleCenter}>Recent Lab Reports</Text>
+                                <View style={styles.cardDivider} />
+                                <View style={styles.reportItem}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <Text style={styles.reportText}>Complete Blood Count (CBC) Date: July 10, 2025 - Status: Normal</Text>
+                                </View>
+                                <View style={styles.reportItem}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <Text style={styles.reportText}>Lipid Panel Date: June 25, 2025 - Status: Normal</Text>
+                                </View>
+                                <View style={styles.reportItem}>
+                                    <Text style={styles.bullet}>•</Text>
+                                    <Text style={styles.reportText}>Glucose Test Date: June 15, 2025 - Status: Elevated</Text>
+                                </View>
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity style={styles.viewMoreButton}>
+                                        <Text style={styles.viewMoreText}>view more</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                            <View style={styles.reportItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.reportText}>Lipid Panel Date: June 25, 2025 - Status: Normal</Text>
-                            </View>
-                            <View style={styles.reportItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.reportText}>Glucose Test Date: June 15, 2025 - Status: Elevated</Text>
-                            </View>
-                            <View style={styles.reportItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.reportText}>Thyroid Function Date: May 30, 2025 - Status: Normal</Text>
-                            </View>
-                            <TouchableOpacity style={styles.viewMoreButton}>
-                                <Text style={styles.viewMoreText}>view more</Text>
-                            </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* Allergies and Empty Space */}
-                    <View style={styles.row}>
-                        {/* Allergies Card */}
-                        <View style={styles.allergiesCard}>
-                            <Text style={styles.cardTitleCenter}>Allergies</Text>
-                            <View style={styles.cardDivider} />
-                            <View style={styles.allergyItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.allergyText}>Penicillin, Severity: Moderate</Text>
-                            </View>
-                            <View style={styles.allergyItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.allergyText}>Peanuts, Severity: Severe</Text>
-                            </View>
-                            <View style={styles.allergyItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.allergyText}>Dust Mites, Severity: Mild</Text>
-                            </View>
-                            <View style={styles.allergyItem}>
-                                <Text style={styles.bullet}>•</Text>
-                                <Text style={styles.allergyText}>Shellfish, Severity: Moderate</Text>
-                            </View>
-                            <TouchableOpacity style={styles.viewMoreButton}>
-                                <Text style={styles.viewMoreText}>view more</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Empty Space */}
-                        <View style={styles.emptySpace} />
-                    </View>
-
-                    {/* Current Medication Card */}
+                    {/* Current Medication Card - Full width below the columns */}
                     <View style={styles.medicationCard}>
                         <Text style={styles.cardTitleCenter}>Current Medication</Text>
                         <View style={styles.cardDivider} />
@@ -174,9 +167,11 @@ const HomeScreen = () => {
                             <Text style={styles.subBullet}>-</Text>
                             <Text style={styles.subMedicationText}>Metformin</Text>
                         </View>
-                        <TouchableOpacity style={styles.medicationViewMore}>
-                            <Text style={styles.viewMoreText}>view more</Text>
-                        </TouchableOpacity>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.viewMoreButton}>
+                                <Text style={styles.viewMoreText}>view more</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -184,17 +179,24 @@ const HomeScreen = () => {
             {/* Third Row - Navigation */}
             <View style={styles.thirdRow}>
                 <View style={styles.navigationCard}>
+                    {/* Home Icon - Black (current page) */}
                     <TouchableOpacity style={styles.navIcon}>
                         <Image source={require('../assets/home-icon1.png')} style={styles.navIconImage} />
                     </TouchableOpacity>
+                    
+                    {/* QR Icon - White */}
                     <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/qr-icon1.png')} style={styles.navIconImage} />
+                        <Image source={require('../assets/qr-icon2.png')} style={styles.navIconImageWhite} />
                     </TouchableOpacity>
+                    
+                    {/* Profile Icon - White */}
                     <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/profile-icon1.png')} style={styles.navIconImage} />
+                        <Image source={require('../assets/profile-icon2.png')} style={styles.navIconImageWhite} />
                     </TouchableOpacity>
+                    
+                    {/* Documents Icon - White */}
                     <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/docs-icon1.png')} style={styles.navIconImage} />
+                        <Image source={require('../assets/docs-icon2.png')} style={styles.navIconImageWhite} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
     doctorName: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000000',
+        color: 'black',
     },
     iconsSection: {
         flexDirection: 'row',
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
     icon: {
         width: 20,
         height: 20,
-        tintColor: '#000000',
+        tintColor: 'black',
     },
     secondHorizontalRow: {
         flexDirection: 'row',
@@ -330,88 +332,94 @@ const styles = StyleSheet.create({
     },
     patientNameCard: {
         width: '100%',
-        height: 60,
+        height: 40,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        justifyContent: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
-        marginBottom: 15,
+        marginBottom: 10,
         alignSelf: 'center',
     },
     patientNameLabel: {
         fontSize: 14,
         fontWeight: '600',
         color: '#2260FF',
-        marginBottom: 2,
     },
     patientNameValue: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#000000',
+        color: 'black',
     },
-    row: {
+    twoColumns: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 15,
         gap: 15,
     },
+    leftColumn: {
+        flex: 1,
+        gap: 15,
+    },
+    rightColumn: {
+        flex: 1,
+    },
     bloodTypeCard: {
-        width: 130,
-        height: 80,
+        width: '100%',
+        height: 50,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         justifyContent: 'center',
+        marginBottom: -4,
         alignItems: 'center',
         padding: 10,
     },
+    bloodTypeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     bloodTypeLabel: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: '600',
         color: '#2260FF',
-        marginBottom: 5,
         textAlign: 'center',
     },
     bloodTypeValue: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#000000',
+        color: 'black',
         textAlign: 'center',
     },
     labReportsCard: {
-        width: 179,
-        height: 268,
+        width: '100%',
+        height: 232,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
         justifyContent: 'space-between',
     },
     allergiesCard: {
-        width: 130,
-        height: 214,
+        width: '100%',
+        height: 170,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
         justifyContent: 'space-between',
-    },
-    emptySpace: {
-        width: 179,
-        height: 214,
     },
     medicationCard: {
         width: '100%',
-        height: 150,
+        height: 168,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
         justifyContent: 'space-between',
-        alignSelf: 'center',
     },
     cardTitleCenter: {
         fontSize: 14,
         fontWeight: '600',
         color: '#2260FF',
         textAlign: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     cardDivider: {
         height: 1,
@@ -468,20 +476,15 @@ const styles = StyleSheet.create({
         color: '#070707',
         lineHeight: 14,
     },
+    buttonContainer: {
+        marginTop: 'auto',
+        paddingTop: 10,
+    },
     viewMoreButton: {
         backgroundColor: '#2260FF',
         borderRadius: 6,
         padding: 6,
         alignItems: 'center',
-        marginTop: 8,
-        width: '100%',
-    },
-    medicationViewMore: {
-        backgroundColor: '#2260FF',
-        borderRadius: 6,
-        padding: 6,
-        alignItems: 'center',
-        marginTop: 8,
         width: '100%',
     },
     viewMoreText: {
@@ -491,13 +494,13 @@ const styles = StyleSheet.create({
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',
-        padding: 20,
+        padding: 15,
         alignItems: 'center',
     },
     navigationCard: {
         width: 298,
         height: 48,
-        backgroundColor: '#ECF1FF',
+        backgroundColor: '#2260FF',
         borderRadius: 24,
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -509,7 +512,12 @@ const styles = StyleSheet.create({
     navIconImage: {
         width: 24,
         height: 24,
-        tintColor: '#2260FF',
+        tintColor: 'black',
+    },
+    navIconImageWhite: {
+        width: 24,
+        height: 24,
+        tintColor: '#FFFFFF',
     },
 });
 
