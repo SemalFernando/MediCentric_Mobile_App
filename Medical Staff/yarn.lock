@@ -5529,6 +5529,11 @@ react-native-is-edge-to-edge@^1.2.1:
   resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.2.1.tgz"
   integrity sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q==
 
+react-native-navigation-bar-color@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.npmjs.org/react-native-navigation-bar-color/-/react-native-navigation-bar-color-2.0.2.tgz"
+  integrity sha512-ZmpLWRocyme1au11e5ZuecMS/UCi57nlzgnioi03Q6ERMbeUOqqbWgNBaNB7SsCeqBV6fZPjo3+A64zEIpzw4w==
+
 react-native-network-logger@^2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/react-native-network-logger/-/react-native-network-logger-2.0.1.tgz"

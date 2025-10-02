@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import LoginScreen from '../pages/LoginScreen';
 import SignUpScreen from '../pages/SignupScreen';
 import SetPasswordScreen from '../pages/SetPasswordScreen';
@@ -88,85 +89,92 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
   );
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('../assets/logo2.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <Text style={styles.mediText}>MEDI</Text>
-      <Text style={styles.centricText}>CENTRIC</Text>
-      <Text style={styles.taglineText}>Centralizing Your Health</Text>
+    <ScreenWrapper 
+      backgroundColor="#FFFFFF"
+      statusBarStyle="dark-content"
+      barStyle="dark-content"
+      translucent={false}
+    >
+      <View style={styles.container}>
+        <Image
+          source={require('../assets/logo2.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.mediText}>MEDI</Text>
+        <Text style={styles.centricText}>CENTRIC</Text>
+        <Text style={styles.taglineText}>Centralizing Your Health</Text>
 
-      <Text style={styles.descriptionText}>
-        Streamline patient care with secure access to medical records, diagnostics, and collaboration tools.
-      </Text>
-
-      {/* Role Selection Button */}
-      <TouchableOpacity
-        style={styles.roleSelector}
-        onPress={() => setShowRoleModal(true)}
-      >
-        <Text style={selectedRole ? styles.roleSelectedText : styles.rolePlaceholder}>
-          {selectedRole ? selectedRole.label : 'Select your role'}
+        <Text style={styles.descriptionText}>
+          Streamline patient care with secure access to medical records, diagnostics, and collaboration tools.
         </Text>
-      </TouchableOpacity>
 
-      {selectedRole && (
-        <View style={styles.authButtonsContainer}>
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => {
-              setShowLogin(true);
-              setPreviousScreen('welcome');
-            }}
-          >
-            <Text style={styles.loginButtonText}>LogIn as {selectedRole.label}</Text>
-          </TouchableOpacity>
+        {/* Role Selection Button */}
+        <TouchableOpacity
+          style={styles.roleSelector}
+          onPress={() => setShowRoleModal(true)}
+        >
+          <Text style={selectedRole ? styles.roleSelectedText : styles.rolePlaceholder}>
+            {selectedRole ? selectedRole.label : 'Select your role'}
+          </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.signupButton}
-            onPress={() => {
-              setShowSignUp(true);
-              setPreviousScreen('welcome');
-            }}
-          >
-            <Text style={styles.signupButtonText}>SignUp as {selectedRole.label}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Role Selection Modal */}
-      <Modal
-        visible={showRoleModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowRoleModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Your Role</Text>
-
-            <ScrollView style={styles.rolesContainer}>
-              {roles.map((role) => (
-                <RoleButton
-                  key={role.id}
-                  role={role}
-                  onPress={handleRoleSelect}
-                />
-              ))}
-            </ScrollView>
+        {selectedRole && (
+          <View style={styles.authButtonsContainer}>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => {
+                setShowLogin(true);
+                setPreviousScreen('welcome');
+              }}
+            >
+              <Text style={styles.loginButtonText}>LogIn as {selectedRole.label}</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowRoleModal(false)}
+              style={styles.signupButton}
+              onPress={() => {
+                setShowSignUp(true);
+                setPreviousScreen('welcome');
+              }}
             >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
+              <Text style={styles.signupButtonText}>SignUp as {selectedRole.label}</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </View>
+        )}
+
+        {/* Role Selection Modal */}
+        <Modal
+          visible={showRoleModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowRoleModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Your Role</Text>
+
+              <ScrollView style={styles.rolesContainer}>
+                {roles.map((role) => (
+                  <RoleButton
+                    key={role.id}
+                    role={role}
+                    onPress={handleRoleSelect}
+                  />
+                ))}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowRoleModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </ScreenWrapper>
   );
 };
 

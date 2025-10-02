@@ -1,144 +1,152 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const HomeScreen = () => {
     const [activePage, setActivePage] = useState('home'); // Track the active page
 
     return (
-        <ScrollView style={styles.container}>
-            {/* First Row - White Background */}
-            <View style={styles.firstRow}>
-                {/* First Horizontal Row: Profile + Icons */}
-                <View style={styles.firstHorizontalRow}>
-                    {/* Left Section: Profile and Welcome */}
-                    <View style={styles.profileSection}>
-                        <Image
-                            source={require('../assets/profile-pic.png')}
-                            style={styles.profilePic}
-                        />
-                        <View style={styles.welcomeText}>
-                            <Text style={styles.welcomeBack}>Welcome back!</Text>
-                            <Text style={styles.doctorName}>Dr. John Wick</Text>
+        <ScreenWrapper 
+            backgroundColor="#FFFFFF"
+            statusBarStyle="dark-content"
+            barStyle="dark-content"
+            translucent={false}
+        >
+            <ScrollView style={styles.container}>
+                {/* First Row - White Background */}
+                <View style={styles.firstRow}>
+                    {/* First Horizontal Row: Profile + Icons */}
+                    <View style={styles.firstHorizontalRow}>
+                        {/* Left Section: Profile and Welcome */}
+                        <View style={styles.profileSection}>
+                            <Image
+                                source={require('../assets/profile-pic.png')}
+                                style={styles.profilePic}
+                            />
+                            <View style={styles.welcomeText}>
+                                <Text style={styles.welcomeBack}>Welcome back!</Text>
+                                <Text style={styles.doctorName}>Dr. John Wick</Text>
+                            </View>
+                        </View>
+
+                        {/* Right Section: Notification and Settings Icons */}
+                        <View style={styles.iconsSection}>
+                            <TouchableOpacity style={styles.iconCircle}>
+                                <Image
+                                    source={require('../assets/notification-icon.png')}
+                                    style={styles.icon}
+                                />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.iconCircle}>
+                                <Image
+                                    source={require('../assets/settings-icon.png')}
+                                    style={styles.icon}
+                                />
+                            </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* Right Section: Notification and Settings Icons */}
-                    <View style={styles.iconsSection}>
-                        <TouchableOpacity style={styles.iconCircle}>
+                    {/* Divider Line */}
+                    <View style={styles.divider} />
+                </View>
+
+                {/* Second Row - CAD6FF Background */}
+                <View style={styles.secondRow}>
+                    <View style={styles.cardsContainer}>
+                        {/* Single Card for QR Scanning */}
+                        <View style={styles.qrCard}>
+                            <Text style={styles.qrTitle}>Scan Patient QR</Text>
+                            <View style={styles.cardDivider} />
                             <Image
-                                source={require('../assets/notification-icon.png')}
-                                style={styles.icon}
+                                source={require('../assets/qr-code-placeholder.png')} // Replace with your QR code image
+                                style={styles.qrImage}
+                                resizeMode="contain"
+                            />
+                            <TouchableOpacity style={styles.scanButton}>
+                                <Text style={styles.scanButtonText}>Scan</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Third Row - Navigation */}
+                <View style={styles.thirdRow}>
+                    <View style={styles.navigationCard}>
+                        {/* Home Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('home')}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'home'
+                                        ? require('../assets/home-icon1.png')
+                                        : require('../assets/home-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
                             />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.iconCircle}>
+
+                        {/* QR Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('qr')}
+                        >
                             <Image
-                                source={require('../assets/settings-icon.png')}
-                                style={styles.icon}
+                                source={
+                                    activePage === 'qr'
+                                        ? require('../assets/qr-icon1.png')
+                                        : require('../assets/qr-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Prescription Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('prescription')}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'prescription'
+                                        ? require('../assets/prescription-icon1.png')
+                                        : require('../assets/prescription-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'prescription' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Documents Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('documents')}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'documents'
+                                        ? require('../assets/docs-icon1.png')
+                                        : require('../assets/docs-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
                             />
                         </TouchableOpacity>
                     </View>
                 </View>
-
-                {/* Divider Line */}
-                <View style={styles.divider} />
-            </View>
-
-            {/* Second Row - CAD6FF Background */}
-            <View style={styles.secondRow}>
-                <View style={styles.cardsContainer}>
-                    {/* Single Card for QR Scanning */}
-                    <View style={styles.qrCard}>
-                        <Text style={styles.qrTitle}>Scan Patient QR</Text>
-                        <View style={styles.cardDivider} />
-                        <Image
-                            source={require('../assets/qr-code-placeholder.png')} // Replace with your QR code image
-                            style={styles.qrImage}
-                            resizeMode="contain"
-                        />
-                        <TouchableOpacity style={styles.scanButton}>
-                            <Text style={styles.scanButtonText}>Scan</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
-
-            {/* Third Row - Navigation */}
-            <View style={styles.thirdRow}>
-                <View style={styles.navigationCard}>
-                    {/* Home Icon */}
-                    <TouchableOpacity
-                        style={styles.navIcon}
-                        onPress={() => setActivePage('home')}
-                    >
-                        <Image
-                            source={
-                                activePage === 'home'
-                                    ? require('../assets/home-icon1.png')
-                                    : require('../assets/home-icon2.png')
-                            }
-                            style={[
-                                styles.navIconImage,
-                                activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
-                            ]}
-                        />
-                    </TouchableOpacity>
-
-                    {/* QR Icon */}
-                    <TouchableOpacity
-                        style={styles.navIcon}
-                        onPress={() => setActivePage('qr')}
-                    >
-                        <Image
-                            source={
-                                activePage === 'qr'
-                                    ? require('../assets/qr-icon1.png')
-                                    : require('../assets/qr-icon2.png')
-                            }
-                            style={[
-                                styles.navIconImage,
-                                activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
-                            ]}
-                        />
-                    </TouchableOpacity>
-
-                    {/* Profile Icon */}
-                    <TouchableOpacity
-                        style={styles.navIcon}
-                        onPress={() => setActivePage('profile')}
-                    >
-                        <Image
-                            source={
-                                activePage === 'profile'
-                                    ? require('../assets/profile-icon1.png')
-                                    : require('../assets/profile-icon2.png')
-                            }
-                            style={[
-                                styles.navIconImage,
-                                activePage === 'profile' ? styles.activeIcon : styles.inactiveIcon
-                            ]}
-                        />
-                    </TouchableOpacity>
-
-                    {/* Documents Icon */}
-                    <TouchableOpacity
-                        style={styles.navIcon}
-                        onPress={() => setActivePage('documents')}
-                    >
-                        <Image
-                            source={
-                                activePage === 'documents'
-                                    ? require('../assets/docs-icon1.png')
-                                    : require('../assets/docs-icon2.png')
-                            }
-                            style={[
-                                styles.navIconImage,
-                                activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
-                            ]}
-                        />
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </ScreenWrapper>
     );
 };
 

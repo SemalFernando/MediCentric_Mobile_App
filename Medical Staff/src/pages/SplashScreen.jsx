@@ -1,18 +1,26 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const SplashScreen = () => {
   return (
-    <View style={styles.container}>
-      <Image 
-        source={require('../assets/logo.png')} 
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <Text style={styles.mediText}>MEDI</Text>
-      <Text style={styles.centricText}>CENTRIC</Text>
-      <Text style={styles.taglineText}>Centralizing Your Health</Text>
-    </View>
+    <ScreenWrapper 
+      backgroundColor="#2260FF"
+      statusBarStyle="light-content"
+      barStyle="light-content"
+      translucent={true}
+    >
+      <View style={styles.container}>
+        <Image 
+          source={require('../assets/logo.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.mediText}>MEDI</Text>
+        <Text style={styles.centricText}>CENTRIC</Text>
+        <Text style={styles.taglineText}>Centralizing Your Health</Text>
+      </View>
+    </ScreenWrapper>
   );
 };
 

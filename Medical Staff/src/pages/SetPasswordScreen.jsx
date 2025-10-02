@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const SetPasswordScreen = ({ onBack, onLogin }) => {
   const [password, setPassword] = useState('');
@@ -37,89 +38,96 @@ const SetPasswordScreen = ({ onBack, onLogin }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <ScreenWrapper 
+      backgroundColor="#FFFFFF"
+      statusBarStyle="dark-content"
+      barStyle="dark-content"
+      translucent={false}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={true}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backText}>‹</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Set Password</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        {/* Description */}
-        <Text style={styles.descriptionText}>
-          Create a strong password to protect your health data.{'\n'}
-          Your privacy and security come first.
-        </Text>
-
-        {/* Password Section */}
-        <Text style={styles.inputLabel}>Password</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/password-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="****************"
-            placeholderTextColor="#809CFF"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-            <Image 
-              source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
-              style={styles.eyeIconImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Confirm Password Section */}
-        <Text style={styles.inputLabel}>Confirm Password</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/password-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="****************"
-            placeholderTextColor="#809CFF"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry={!showConfirmPassword}
-          />
-          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
-            <Image 
-              source={showConfirmPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
-              style={styles.eyeIconImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Create Password Button */}
-        <TouchableOpacity 
-          style={styles.createButton} 
-          onPress={handleCreatePassword}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.createButtonText}>Create New Password</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Text style={styles.backText}>‹</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Set Password</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          {/* Description */}
+          <Text style={styles.descriptionText}>
+            Create a strong password to protect your health data.{'\n'}
+            Your privacy and security come first.
+          </Text>
+
+          {/* Password Section */}
+          <Text style={styles.inputLabel}>Password</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/password-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="****************"
+              placeholderTextColor="#809CFF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <Image 
+                source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
+                style={styles.eyeIconImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password Section */}
+          <Text style={styles.inputLabel}>Confirm Password</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/password-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="****************"
+              placeholderTextColor="#809CFF"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+              <Image 
+                source={showConfirmPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
+                style={styles.eyeIconImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Create Password Button */}
+          <TouchableOpacity 
+            style={styles.createButton} 
+            onPress={handleCreatePassword}
+          >
+            <Text style={styles.createButtonText}>Create New Password</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
   );
 };
 

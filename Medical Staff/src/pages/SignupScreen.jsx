@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
   const [fullName, setFullName] = useState('');
@@ -10,158 +11,165 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <ScreenWrapper 
+      backgroundColor="#FFFFFF"
+      statusBarStyle="dark-content"
+      barStyle="dark-content"
+      translucent={false}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={true}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backText}>‹</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Account</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Text style={styles.backText}>‹</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>New Account</Text>
+            <View style={{ width: 24 }} />
+          </View>
 
-        {/* Full Name Section */}
-        <Text style={styles.inputLabel}>Full name</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/user-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="John Doe"
-            placeholderTextColor="#809CFF"
-            value={fullName}
-            onChangeText={setFullName}
-            autoCapitalize="words"
-          />
-        </View>
-
-        {/* Email Section */}
-        <Text style={styles.inputLabel}>Email</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/email-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="john.doe@gmail.com"
-            placeholderTextColor="#809CFF"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        {/* Password Section */}
-        <Text style={styles.inputLabel}>Password</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/password-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="****************"
-            placeholderTextColor="#809CFF"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+          {/* Full Name Section */}
+          <Text style={styles.inputLabel}>Full name</Text>
+          <View style={styles.inputContainer}>
             <Image 
-              source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
-              style={styles.eyeIconImage}
+              source={require('../assets/user-icon.png')} 
+              style={styles.inputIcon}
               resizeMode="contain"
             />
+            <TextInput
+              style={styles.input}
+              placeholder="John Doe"
+              placeholderTextColor="#809CFF"
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+            />
+          </View>
+
+          {/* Email Section */}
+          <Text style={styles.inputLabel}>Email</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/email-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="john.doe@gmail.com"
+              placeholderTextColor="#809CFF"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Password Section */}
+          <Text style={styles.inputLabel}>Password</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/password-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="****************"
+              placeholderTextColor="#809CFF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <Image 
+                source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
+                style={styles.eyeIconImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Mobile Number Section */}
+          <Text style={styles.inputLabel}>Mobile number</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/phone-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="+1 234 567 8900"
+              placeholderTextColor="#809CFF"
+              value={mobileNumber}
+              onChangeText={setMobileNumber}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          {/* Date of Birth Section */}
+          <Text style={styles.inputLabel}>Date of birth</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/dob-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="MM/DD/YYYY"
+              placeholderTextColor="#809CFF"
+              value={dateOfBirth}
+              onChangeText={setDateOfBirth}
+              keyboardType="numbers-and-punctuation"
+            />
+          </View>
+
+          {/* Terms and Privacy */}
+          <Text style={styles.termsText}>
+            By continuing, you agree to Terms of Use and Privacy Policy.
+          </Text>
+
+          {/* Sign Up Button */}
+          <TouchableOpacity style={styles.signupButton}>
+            <Text style={styles.signupButtonText}>Sign Up</Text>
           </TouchableOpacity>
-        </View>
 
-        {/* Mobile Number Section */}
-        <Text style={styles.inputLabel}>Mobile number</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/phone-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="+1 234 567 8900"
-            placeholderTextColor="#809CFF"
-            value={mobileNumber}
-            onChangeText={setMobileNumber}
-            keyboardType="phone-pad"
-          />
-        </View>
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or sign up with</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
-        {/* Date of Birth Section */}
-        <Text style={styles.inputLabel}>Date of birth</Text>
-        <View style={styles.inputContainer}>
-          <Image 
-            source={require('../assets/dob-icon.png')} 
-            style={styles.inputIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="MM/DD/YYYY"
-            placeholderTextColor="#809CFF"
-            value={dateOfBirth}
-            onChangeText={setDateOfBirth}
-            keyboardType="numbers-and-punctuation"
-          />
-        </View>
+          {/* Social Login Buttons */}
+          <View style={styles.socialButtons}>
+            <TouchableOpacity style={styles.socialButton}>
+              <Image source={require('../assets/google.png')} style={styles.socialIcon} resizeMode="contain" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <Image source={require('../assets/facebook.png')} style={styles.socialIcon} resizeMode="contain" />
+            </TouchableOpacity>
+          </View>
 
-        {/* Terms and Privacy */}
-        <Text style={styles.termsText}>
-          By continuing, you agree to Terms of Use and Privacy Policy.
-        </Text>
-
-        {/* Sign Up Button */}
-        <TouchableOpacity style={styles.signupButton}>
-          <Text style={styles.signupButtonText}>Sign Up</Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or sign up with</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Social Login Buttons */}
-        <View style={styles.socialButtons}>
-          <TouchableOpacity style={styles.socialButton}>
-            <Image source={require('../assets/google.png')} style={styles.socialIcon} resizeMode="contain" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <Image source={require('../assets/facebook.png')} style={styles.socialIcon} resizeMode="contain" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Login Link */}
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <TouchableOpacity onPress={onNavigateToLogin}>
-            <Text style={styles.loginLink}>Login</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {/* Login Link */}
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={onNavigateToLogin}>
+              <Text style={styles.loginLink}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
   );
 };
 
