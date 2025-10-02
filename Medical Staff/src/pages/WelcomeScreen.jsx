@@ -13,12 +13,12 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
   const [showRoleModal, setShowRoleModal] = useState(false);
 
   if (showLogin) {
-    return <LoginScreen 
+    return <LoginScreen
       selectedRole={selectedRole}
       onBack={() => {
         setShowLogin(false);
         setPreviousScreen('welcome');
-      }} 
+      }}
       onNavigateToSignUp={() => {
         setShowLogin(false);
         setShowSignUp(true);
@@ -34,14 +34,14 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
   }
 
   if (showSignUp) {
-    return <SignUpScreen 
+    return <SignUpScreen
       selectedRole={selectedRole}
       onBack={() => {
         setShowSignUp(false);
         if (previousScreen === 'login') {
           setShowLogin(true);
         }
-      }} 
+      }}
       onNavigateToLogin={() => {
         setShowSignUp(false);
         setShowLogin(true);
@@ -51,13 +51,17 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
   }
 
   if (showSetPassword) {
-    return <SetPasswordScreen 
+    return <SetPasswordScreen
       onBack={() => {
         setShowSetPassword(false);
         if (previousScreen === 'login') {
           setShowLogin(true);
         }
-      }} 
+      }}
+      onLogin={() => {
+        setShowSetPassword(false);
+        setShowLogin(true); // This navigates back to login
+      }}
     />;
   }
 
@@ -73,7 +77,7 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
   };
 
   const RoleButton = ({ role, onPress }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.roleButton, selectedRole?.id === role.id && styles.roleButtonSelected]}
       onPress={() => onPress(role)}
     >
@@ -120,7 +124,7 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
             <Text style={styles.loginButtonText}>LogIn as {selectedRole.label}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.signupButton}
             onPress={() => {
               setShowSignUp(true);
@@ -142,18 +146,18 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Your Role</Text>
-            
+
             <ScrollView style={styles.rolesContainer}>
               {roles.map((role) => (
-                <RoleButton 
-                  key={role.id} 
-                  role={role} 
-                  onPress={handleRoleSelect} 
+                <RoleButton
+                  key={role.id}
+                  role={role}
+                  onPress={handleRoleSelect}
                 />
               ))}
             </ScrollView>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setShowRoleModal(false)}
             >

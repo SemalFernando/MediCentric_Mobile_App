@@ -1,11 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
-const SetPasswordScreen = ({ onBack }) => {
+const SetPasswordScreen = ({ onBack, onLogin }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleCreatePassword = () => {
+    console.log('Create Password button pressed');
+    
+    // Add password validation logic here
+    if (!password || !confirmPassword) {
+      Alert.alert('Error', 'Please enter both password fields');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password should be at least 6 characters long');
+      return;
+    }
+
+    // If validation passes, navigate to login
+    console.log('Validation passed, calling onLogin');
+    if (onLogin) {
+      onLogin();
+    } else {
+      console.log('onLogin prop is not provided');
+      Alert.alert('Success', 'Password created successfully!');
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -83,7 +112,10 @@ const SetPasswordScreen = ({ onBack }) => {
         </View>
 
         {/* Create Password Button */}
-        <TouchableOpacity style={styles.createButton}>
+        <TouchableOpacity 
+          style={styles.createButton} 
+          onPress={handleCreatePassword}
+        >
           <Text style={styles.createButtonText}>Create New Password</Text>
         </TouchableOpacity>
       </ScrollView>
