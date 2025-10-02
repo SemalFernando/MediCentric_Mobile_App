@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
 
 const HomeScreen = () => {
+    const [activePage, setActivePage] = useState('home'); // Track the active page
+
     return (
         <ScrollView style={styles.container}>
             {/* First Row - White Background */}
@@ -179,24 +181,80 @@ const HomeScreen = () => {
             {/* Third Row - Navigation */}
             <View style={styles.thirdRow}>
                 <View style={styles.navigationCard}>
-                    {/* Home Icon - Black (current page) */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/home-icon1.png')} style={styles.navIconImage} />
+                    {/* Home Icon */}
+                    <TouchableOpacity
+                        style={styles.navIcon}
+                        onPress={() => setActivePage('home')}
+                    >
+                        <Image
+                            source={
+                                activePage === 'home'
+                                    ? require('../assets/home-icon1.png')
+                                    : require('../assets/home-icon2.png')
+                            }
+                            style={[
+                                styles.navIconImage,
+                                activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
+                            ]}
+                        />
                     </TouchableOpacity>
-                    
-                    {/* QR Icon - White */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/qr-icon2.png')} style={styles.navIconImageWhite} />
+
+                    {/* QR Icon - Navigates to QRCodeScreen */}
+                    <TouchableOpacity
+                        style={styles.navIcon}
+                        onPress={() => {
+                            setActivePage('qr');
+                            // Navigate to QR Code screen
+                            navigation.navigate('QRCodeScreen');
+                        }}
+                    >
+                        <Image
+                            source={
+                                activePage === 'qr'
+                                    ? require('../assets/qr-icon1.png')
+                                    : require('../assets/qr-icon2.png')
+                            }
+                            style={[
+                                styles.navIconImage,
+                                activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
+                            ]}
+                        />
                     </TouchableOpacity>
-                    
-                    {/* Profile Icon - White */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/profile-icon2.png')} style={styles.navIconImageWhite} />
+
+                    {/* Profile Icon */}
+                    <TouchableOpacity
+                        style={styles.navIcon}
+                        onPress={() => setActivePage('profile')}
+                    >
+                        <Image
+                            source={
+                                activePage === 'profile'
+                                    ? require('../assets/profile-icon1.png')
+                                    : require('../assets/profile-icon2.png')
+                            }
+                            style={[
+                                styles.navIconImage,
+                                activePage === 'profile' ? styles.activeIcon : styles.inactiveIcon
+                            ]}
+                        />
                     </TouchableOpacity>
-                    
-                    {/* Documents Icon - White */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/docs-icon2.png')} style={styles.navIconImageWhite} />
+
+                    {/* Documents Icon */}
+                    <TouchableOpacity
+                        style={styles.navIcon}
+                        onPress={() => setActivePage('documents')}
+                    >
+                        <Image
+                            source={
+                                activePage === 'documents'
+                                    ? require('../assets/docs-icon1.png')
+                                    : require('../assets/docs-icon2.png')
+                            }
+                            style={[
+                                styles.navIconImage,
+                                activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
+                            ]}
+                        />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -512,11 +570,11 @@ const styles = StyleSheet.create({
     navIconImage: {
         width: 24,
         height: 24,
+    },
+    activeIcon: {
         tintColor: 'black',
     },
-    navIconImageWhite: {
-        width: 24,
-        height: 24,
+    inactiveIcon: {
         tintColor: '#FFFFFF',
     },
 });
