@@ -1,9 +1,98 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
 const AllergiesScreen = ({ onBack }) => {
     const [activePage, setActivePage] = useState('documents');
+    const [allergies, setAllergies] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Use your computer's IP address instead of localhost
+    const baseUrl = 'http://10.87.143.247:8080'; // Your backend port 8080
+    const patientId = '101'; // Replace with actual patient ID
+
+    // Fetch allergies from backend
+    const fetchAllergies = async () => {
+        try {
+            setLoading(true);
+            console.log('Fetching allergies from:', `${baseUrl}/patients/${patientId}/allergies`);
+            
+            const response = await fetch(`${baseUrl}/patients/${patientId}/allergies`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const allergiesData = await response.json();
+            console.log('Received allergies data:', allergiesData);
+            setAllergies(allergiesData);
+        } catch (error) {
+            console.error('Error fetching allergies:', error);
+            Alert.alert('Error', `Failed to load allergies: ${error.message}`);
+            setAllergies([]); // Set empty array on error
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Add a new allergy
+    const addAllergy = async (allergyData) => {
+        try {
+            const response = await fetch(`${baseUrl}/patients/${patientId}/allergies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(allergyData),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Refresh the allergies list after adding
+            fetchAllergies();
+            return true;
+        } catch (error) {
+            console.error('Error adding allergy:', error);
+            Alert.alert('Error', 'Failed to add allergy');
+            return false;
+        }
+    };
+
+    // Load allergies when component mounts
+    useEffect(() => {
+        fetchAllergies();
+    }, []);
+
+    // Function to render allergy items
+    const renderAllergyItem = (allergy, index) => (
+        <View key={allergy.id || index} style={styles.allergyItem}>
+            <View style={styles.allergyIconContainer}>
+                <Image
+                    source={require('../assets/allergies.png')}
+                    style={styles.allergyIcon}
+                />
+            </View>
+            <View style={styles.allergyContent}>
+                <Text style={styles.allergyName}>{allergy.allergen}</Text>
+                <Text style={styles.allergyDescription} numberOfLines={2}>
+                    Severity: {allergy.severity}
+                    {allergy.reaction && `, Reaction: ${allergy.reaction}`}
+                </Text>
+                {allergy.notes && (
+                    <Text style={styles.allergyNotes} numberOfLines={2}>
+                        Notes: {allergy.notes}
+                    </Text>
+                )}
+                {allergy.confirmedBy && (
+                    <Text style={styles.allergyConfirmedBy} numberOfLines={1}>
+                        Confirmed by: {allergy.confirmedBy}
+                    </Text>
+                )}
+            </View>
+        </View>
+    );
 
     return (
         <ScreenWrapper
@@ -19,106 +108,25 @@ const AllergiesScreen = ({ onBack }) => {
                         <Text style={styles.backText}>‹</Text>
                     </TouchableOpacity>
                     <Text style={styles.title}>Allergies</Text>
-                    <View style={styles.placeholder} />
+                    <TouchableOpacity onPress={fetchAllergies} style={styles.refreshButton}>
+                        <Text style={styles.refreshText}>↻</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Allergies List */}
                 <View style={styles.allergiesList}>
-                    {/* Allergy Item 1 */}
-                    <View style={styles.allergyItem}>
-                        <View style={styles.allergyIconContainer}>
-                            <Image
-                                source={require('../assets/allergies.png')}
-                                style={styles.allergyIcon}
-                            />
+                    {loading ? (
+                        <Text style={styles.loadingText}>Loading allergies...</Text>
+                    ) : allergies.length > 0 ? (
+                        allergies.map(renderAllergyItem)
+                    ) : (
+                        <View style={styles.noAllergiesContainer}>
+                            <Text style={styles.noAllergiesText}>No allergies found</Text>
+                            <TouchableOpacity onPress={fetchAllergies} style={styles.retryButton}>
+                                <Text style={styles.retryText}>Retry</Text>
+                            </TouchableOpacity>
                         </View>
-                        <View style={styles.allergyContent}>
-                            <Text style={styles.allergyName}>Penicillin</Text>
-                            <Text style={styles.allergyDescription} numberOfLines={2}>
-                                Severity: Moderate
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Allergy Item 2 */}
-                    <View style={styles.allergyItem}>
-                        <View style={styles.allergyIconContainer}>
-                            <Image
-                                source={require('../assets/allergies.png')}
-                                style={styles.allergyIcon}
-                            />
-                        </View>
-                        <View style={styles.allergyContent}>
-                            <Text style={styles.allergyName}>Peanuts</Text>
-                            <Text style={styles.allergyDescription} numberOfLines={2}>
-                                Severity: Severe
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Allergy Item 3 */}
-                    <View style={styles.allergyItem}>
-                        <View style={styles.allergyIconContainer}>
-                            <Image
-                                source={require('../assets/allergies.png')}
-                                style={styles.allergyIcon}
-                            />
-                        </View>
-                        <View style={styles.allergyContent}>
-                            <Text style={styles.allergyName}>Dust Mites</Text>
-                            <Text style={styles.allergyDescription} numberOfLines={2}>
-                                Severity: Mild
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Allergy Item 4 */}
-                    <View style={styles.allergyItem}>
-                        <View style={styles.allergyIconContainer}>
-                            <Image
-                                source={require('../assets/allergies.png')}
-                                style={styles.allergyIcon}
-                            />
-                        </View>
-                        <View style={styles.allergyContent}>
-                            <Text style={styles.allergyName}>Shellfish</Text>
-                            <Text style={styles.allergyDescription} numberOfLines={2}>
-                                Severity: Severe
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Allergy Item 5 */}
-                    <View style={styles.allergyItem}>
-                        <View style={styles.allergyIconContainer}>
-                            <Image
-                                source={require('../assets/allergies.png')}
-                                style={styles.allergyIcon}
-                            />
-                        </View>
-                        <View style={styles.allergyContent}>
-                            <Text style={styles.allergyName}>Pollen</Text>
-                            <Text style={styles.allergyDescription} numberOfLines={2}>
-                                Severity: Moderate
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Allergy Item 6 */}
-                    <View style={styles.allergyItem}>
-                        <View style={styles.allergyIconContainer}>
-                            <Image
-                                source={require('../assets/allergies.png')}
-                                style={styles.allergyIcon}
-                            />
-                        </View>
-                        <View style={styles.allergyContent}>
-                            <Text style={styles.allergyName}>Latex</Text>
-                            <Text style={styles.allergyDescription} numberOfLines={2}>
-                                Severity: Mild
-                            </Text>
-                        </View>
-                    </View>
+                    )}
                 </View>
             </ScrollView>
         </ScreenWrapper>
@@ -154,8 +162,13 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         flex: 1,
     },
-    placeholder: {
-        width: 24,
+    refreshButton: {
+        padding: 5,
+    },
+    refreshText: {
+        fontSize: 24,
+        color: '#2260FF',
+        fontWeight: 'bold',
     },
     allergiesList: {
         paddingHorizontal: 20,
@@ -198,6 +211,47 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         lineHeight: 18,
+        marginBottom: 2,
+    },
+    allergyNotes: {
+        fontSize: 12,
+        color: '#888',
+        lineHeight: 16,
+        marginBottom: 2,
+        fontStyle: 'italic',
+    },
+    allergyConfirmedBy: {
+        fontSize: 12,
+        color: '#888',
+        lineHeight: 16,
+        fontStyle: 'italic',
+    },
+    loadingText: {
+        textAlign: 'center',
+        fontSize: 16,
+        color: '#666',
+        marginTop: 20,
+    },
+    noAllergiesContainer: {
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    noAllergiesText: {
+        textAlign: 'center',
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 10,
+    },
+    retryButton: {
+        backgroundColor: '#2260FF',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    retryText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '600',
     },
     activeIcon: {
         tintColor: 'black',
