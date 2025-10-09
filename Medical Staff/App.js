@@ -11,6 +11,7 @@ import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import QRCodeScannerScreen from './src/pages/QRCodeScannerScreen';
 import PermissionTestScreen from './src/pages/PermissionTestScreen';
+import ProfileScreen from './src/pages/ProfileScreen'; // Import the ProfileScreen
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -101,6 +102,21 @@ const App = () => {
     setCurrentScreen('home');
   };
 
+  // Navigate to profile screen
+  const navigateToProfile = () => {
+    setCurrentScreen('profile');
+  };
+
+  const navigateBackFromProfile = () => {
+    setCurrentScreen('home');
+  };
+
+  // Handle logout from profile screen
+  const handleLogout = () => {
+    setScannedPatient(null);
+    setCurrentScreen('welcome');
+  };
+
   // Render the appropriate screen based on currentScreen state
   switch (currentScreen) {
     case 'initialHome':
@@ -119,6 +135,7 @@ const App = () => {
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
           onNavigateToPrescriptionForm={navigateToPrescriptionForm}
+          onNavigateToProfile={navigateToProfile} // Add this prop
           patientData={scannedPatient}
         />
       );
@@ -174,6 +191,13 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToReports={navigateToReports}
+        />
+      );
+    case 'profile':
+      return (
+        <ProfileScreen
+          onBack={navigateBackFromProfile}
+          onLogout={handleLogout}
         />
       );
     case 'welcome':

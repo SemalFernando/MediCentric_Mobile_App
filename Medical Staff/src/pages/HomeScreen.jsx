@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm }) => {
+const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile }) => {
     const [activePage, setActivePage] = useState('home'); // Track the active page
 
     const handleQRPress = () => {
@@ -39,6 +39,12 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
         }
     };
 
+    const handleProfilePress = () => {
+        if (onNavigateToProfile) {
+            onNavigateToProfile();
+        }
+    };
+
     return (
         <ScreenWrapper
             backgroundColor="#FFFFFF"
@@ -52,7 +58,10 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                     {/* First Horizontal Row: Profile + Icons */}
                     <View style={styles.firstHorizontalRow}>
                         {/* Left Section: Profile and Welcome */}
-                        <View style={styles.profileSection}>
+                        <TouchableOpacity
+                            style={styles.profileSection}
+                            onPress={handleProfilePress}
+                        >
                             <Image
                                 source={require('../assets/profile-pic.png')}
                                 style={styles.profilePic}
@@ -61,7 +70,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                                 <Text style={styles.welcomeBack}>Welcome back!</Text>
                                 <Text style={styles.doctorName}>Dr. John Wick</Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
 
                         {/* Right Section: Notification and Settings Icons */}
                         <View style={styles.iconsSection}>
@@ -71,7 +80,10 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                                     style={styles.icon}
                                 />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconCircle}>
+                            <TouchableOpacity
+                                style={styles.iconCircle}
+                                onPress={handleProfilePress}
+                            >
                                 <Image
                                     source={require('../assets/settings-icon.png')}
                                     style={styles.icon}
@@ -93,7 +105,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                         </View>
 
                         {/* Add New Prescription Button */}
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.addPrescriptionButton}
                             onPress={handleAddPrescriptionPress}
                         >
@@ -127,7 +139,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                                             <Text style={styles.allergySeverity}>Severity: Moderate</Text>
                                         </View>
                                     </View>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         style={styles.viewButton}
                                         onPress={handleAllergiesPress}
                                     >
@@ -159,7 +171,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                                             <Text style={styles.reportDetail}>Status: Normal</Text>
                                         </View>
                                     </View>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         style={styles.viewButton}
                                         onPress={handleReportsPress}
                                     >
@@ -177,7 +189,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                                 <Text style={styles.medicationItem}>• Ibuprofen</Text>
                                 <Text style={styles.medicationItem}>• Amoxicillin</Text>
                             </View>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.viewPrescriptionsButton}
                                 onPress={handlePrescriptionsPress}
                             >
@@ -268,7 +280,6 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     );
 };
 
-// ... (styles remain exactly the same as your original)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -293,8 +304,10 @@ const styles = StyleSheet.create({
     profilePic: {
         width: 60,
         height: 60,
-        borderRadius: 30,
         marginRight: 15,
+        borderRadius: 60,
+        borderWidth: 2,
+        borderColor: '#2260FF',
     },
     welcomeText: {
         flex: 1,
