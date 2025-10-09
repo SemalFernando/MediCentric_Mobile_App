@@ -1,18 +1,414 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useCallback, memo } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, Modal, Platform } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const PrescriptionFormScreen = ({ onBack }) => {
-    const [activePage, setActivePage] = useState('prescription');
-    const [issueDate, setIssueDate] = useState('');
-    const [reviewDate, setReviewDate] = useState('');
-    const [category, setCategory] = useState('');
-    const [medicationList, setMedicationList] = useState('');
+// Memoized Custom Date Picker Component
+const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }) => {
+  const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
 
-    const handleAddPrescription = () => {
-        // Handle adding prescription logic here
-        console.log('Adding prescription:', { issueDate, reviewDate, category, medicationList });
-        // You can add navigation or API call here
+  // Update local date when prop changes
+  React.useEffect(() => {
+    setLocalSelectedDate(selectedDate);
+  }, [selectedDate]);
+
+  // Helper function to get days in month - MOVED BEFORE ITS USAGE
+  const getDaysInMonth = (year, month) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const currentYear = localSelectedDate.getFullYear();
+  const currentMonth = localSelectedDate.getMonth();
+  const currentDay = localSelectedDate.getDate();
+  
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+  const days = Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => i + 1);
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const handleMonthSelect = (monthIndex) => {
+    const newDate = new Date(localSelectedDate);
+    newDate.setMonth(monthIndex);
+    
+    // Adjust day if it exceeds days in new month
+    const daysInNewMonth = getDaysInMonth(newDate.getFullYear(), monthIndex);
+    if (newDate.getDate() > daysInNewMonth) {
+      newDate.setDate(daysInNewMonth);
+    }
+    
+    setLocalSelectedDate(newDate);
+  };
+
+  const handleDaySelect = (day) => {
+    const newDate = new Date(localSelectedDate);
+    newDate.setDate(day);
+    setLocalSelectedDate(newDate);
+  };
+
+  const handleYearSelect = (year) => {
+    const newDate = new Date(localSelectedDate);
+    newDate.setFullYear(year);
+    
+    // Adjust day if it exceeds days in February for leap years
+    const daysInNewMonth = getDaysInMonth(year, newDate.getMonth());
+    if (newDate.getDate() > daysInNewMonth) {
+      newDate.setDate(daysInNewMonth);
+    }
+    
+    setLocalSelectedDate(newDate);
+  };
+
+  const handleConfirm = () => {
+    onDateSelect(localSelectedDate);
+  };
+
+  const handleCancel = () => {
+    // Reset to original selected date when canceling
+    setLocalSelectedDate(selectedDate);
+    onCancel();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.datePickerContainer}>
+          <Text style={styles.datePickerTitle}>Select Review Date</Text>
+          
+          <View style={styles.pickerRow}>
+            {/* Month Picker */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Month</Text>
+              <ScrollView 
+                style={styles.pickerScroll} 
+                showsVerticalScrollIndicator={false}
+              >
+                {months.map((month, index) => (
+                  <TouchableOpacity
+                    key={month}
+                    style={[
+                      styles.pickerItem,
+                      currentMonth === index && styles.selectedPickerItem
+                    ]}
+                    onPress={() => handleMonthSelect(index)}
+                  >
+                    <Text style={[
+                      styles.pickerItemText,
+                      currentMonth === index && styles.selectedPickerItemText
+                    ]}>
+                      {month}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Day Picker */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Day</Text>
+              <ScrollView 
+                style={styles.pickerScroll} 
+                showsVerticalScrollIndicator={false}
+              >
+                {days.map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    style={[
+                      styles.pickerItem,
+                      currentDay === day && styles.selectedPickerItem
+                    ]}
+                    onPress={() => handleDaySelect(day)}
+                  >
+                    <Text style={[
+                      styles.pickerItemText,
+                      currentDay === day && styles.selectedPickerItemText
+                    ]}>
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Year Picker */}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Year</Text>
+              <ScrollView 
+                style={styles.pickerScroll} 
+                showsVerticalScrollIndicator={false}
+              >
+                {years.map((year) => (
+                  <TouchableOpacity
+                    key={year}
+                    style={[
+                      styles.pickerItem,
+                      currentYear === year && styles.selectedPickerItem
+                    ]}
+                    onPress={() => handleYearSelect(year)}
+                  >
+                    <Text style={[
+                      styles.pickerItemText,
+                      currentYear === year && styles.selectedPickerItemText
+                    ]}>
+                      {year}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+
+          <Text style={styles.selectedDateText}>
+            Selected: {formatDate(localSelectedDate)}
+          </Text>
+
+          <View style={styles.datePickerButtons}>
+            <TouchableOpacity
+              style={[styles.datePickerButton, styles.cancelButton]}
+              onPress={handleCancel}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.datePickerButton, styles.confirmButton]}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmButtonText}>Select Date</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+});
+
+const PrescriptionFormScreen = ({ 
+    onBack, 
+    onNavigateToHome, 
+    onNavigateToQRScanner, 
+    onNavigateToReports 
+}) => {
+    const [issueDate] = useState(new Date());
+    const [reviewDate, setReviewDate] = useState(null);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [medicationList, setMedicationList] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [tempDate, setTempDate] = useState('');
+    const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
+    const [activePage, setActivePage] = useState('prescription');
+
+    const baseUrl = 'http://10.87.143.247:8080';
+    const patientId = 'P123';
+
+    // Format date for display
+    const formatDate = useCallback((date) => {
+        if (!date) return '';
+        return date.toLocaleDateString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            year: 'numeric'
+        });
+    }, []);
+
+    // Parse date from MM/DD/YYYY format
+    const parseDate = useCallback((dateString) => {
+        if (!dateString || dateString.length !== 10) return null;
+        const parts = dateString.split('/');
+        if (parts.length !== 3) return null;
+        
+        const [month, day, year] = parts;
+        // Validate month and day ranges
+        const monthNum = parseInt(month, 10);
+        const dayNum = parseInt(day, 10);
+        const yearNum = parseInt(year, 10);
+        
+        if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31 || yearNum < 1900) {
+            return null;
+        }
+        
+        const parsedDate = new Date(yearNum, monthNum - 1, dayNum);
+        // Check if date is valid
+        if (isNaN(parsedDate.getTime()) || 
+            parsedDate.getMonth() !== monthNum - 1 || 
+            parsedDate.getDate() !== dayNum) {
+            return null;
+        }
+        
+        return parsedDate;
+    }, []);
+
+    // Handle manual date input
+    const handleDateInput = useCallback((text) => {
+        const cleaned = text.replace(/[^0-9/]/g, '');
+        
+        let formatted = cleaned;
+        if (cleaned.length >= 2 && cleaned.length <= 3 && !cleaned.includes('/')) {
+            formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+        } else if (cleaned.length >= 5 && cleaned.length <= 6) {
+            formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4);
+        }
+        
+        setTempDate(formatted);
+        
+        if (formatted.length === 10) {
+            try {
+                const parsedDate = parseDate(formatted);
+                if (parsedDate && !isNaN(parsedDate.getTime())) {
+                    setReviewDate(parsedDate);
+                } else {
+                    setReviewDate(null);
+                }
+            } catch (error) {
+                console.log('Invalid date');
+                setReviewDate(null);
+            }
+        } else {
+            setReviewDate(null);
+        }
+    }, [parseDate]);
+
+    // Show custom date picker
+    const showCustomDatePicker = useCallback(() => {
+        setSelectedDateForPicker(reviewDate || new Date());
+        setShowDatePicker(true);
+    }, [reviewDate]);
+
+    // Handle date selection from custom picker
+    const handleDateSelect = useCallback((date) => {
+        setReviewDate(date);
+        setTempDate(formatDate(date));
+        setShowDatePicker(false);
+    }, [formatDate]);
+
+    // Handle cancel date picker
+    const handleCancelDatePicker = useCallback(() => {
+        setShowDatePicker(false);
+    }, []);
+
+    // Handle icon press for date picker
+    const handleIconPress = useCallback(() => {
+        showCustomDatePicker();
+    }, [showCustomDatePicker]);
+
+    // Navigation handlers
+    const handleHomePress = useCallback(() => {
+        setActivePage('home');
+        if (onNavigateToHome) {
+            onNavigateToHome();
+        } else if (onBack) {
+            onBack();
+        }
+    }, [onNavigateToHome, onBack]);
+
+    const handleQRPress = useCallback(() => {
+        setActivePage('qr');
+        if (onNavigateToQRScanner) {
+            onNavigateToQRScanner();
+        }
+    }, [onNavigateToQRScanner]);
+
+    const handleReportsPress = useCallback(() => {
+        setActivePage('documents');
+        if (onNavigateToReports) {
+            onNavigateToReports();
+        }
+    }, [onNavigateToReports]);
+
+    // Handle adding prescription
+    const handleAddPrescription = async () => {
+        if (!medicationList.trim()) {
+            Alert.alert('Error', 'Please enter medication list');
+            return;
+        }
+
+        let finalReviewDate = reviewDate;
+        
+        // If no review date but we have temp date, try to parse it
+        if (!reviewDate && tempDate && tempDate.length === 10) {
+            try {
+                finalReviewDate = parseDate(tempDate);
+                if (!finalReviewDate || isNaN(finalReviewDate.getTime())) {
+                    Alert.alert('Error', 'Please enter a valid review date');
+                    return;
+                }
+            } catch (error) {
+                Alert.alert('Error', 'Please enter a valid review date');
+                return;
+            }
+        }
+
+        // If still no valid date
+        if (!finalReviewDate || isNaN(finalReviewDate.getTime())) {
+            Alert.alert('Error', 'Please select a valid review date');
+            return;
+        }
+
+        // Clear time part for date comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const reviewDateCopy = new Date(finalReviewDate);
+        reviewDateCopy.setHours(0, 0, 0, 0);
+
+        if (reviewDateCopy < today) {
+            Alert.alert('Error', 'Review date cannot be in the past');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            
+            const prescriptionData = {
+                doctorId: "D789",
+                category: "CHRONIC",
+                notes: medicationList.trim()
+            };
+
+            console.log('Sending prescription data:', prescriptionData);
+
+            const response = await fetch(`${baseUrl}/patients/${patientId}/prescriptions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(prescriptionData),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Prescription added successfully:', result);
+            
+            Alert.alert('Success', 'Prescription added successfully!', [
+                { text: 'OK', onPress: () => {
+                    setMedicationList('');
+                    setReviewDate(null);
+                    setTempDate('');
+                    if (onBack) onBack();
+                }}
+            ]);
+
+        } catch (error) {
+            console.error('Error adding prescription:', error);
+            Alert.alert('Error', `Failed to add prescription: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -22,7 +418,7 @@ const PrescriptionFormScreen = ({ onBack }) => {
             barStyle="dark-content"
             translucent={false}
         >
-            <ScrollView style={styles.container}>
+            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
                 {/* Header Section */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={onBack} style={styles.backButton}>
@@ -34,60 +430,48 @@ const PrescriptionFormScreen = ({ onBack }) => {
 
                 {/* Form Fields */}
                 <View style={styles.formContainer}>
-                    {/* Issue Date Field */}
+                    {/* Issue Date Field - Read Only */}
                     <Text style={styles.inputLabel}>Issue Date</Text>
-                    <View style={styles.inputContainer}>
+                    <View style={[styles.inputContainer, styles.disabledInput]}>
                         <Image
-                            source={require('../assets/calendar-icon.png')} // You'll need to add this icon
+                            source={require('../assets/calendar-icon.png')}
                             style={styles.inputIcon}
                             resizeMode="contain"
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="MM/DD/YYYY"
+                            value={formatDate(issueDate)}
+                            editable={false}
                             placeholderTextColor="#809CFF"
-                            value={issueDate}
-                            onChangeText={setIssueDate}
                         />
                     </View>
 
                     {/* Next Review Date Field */}
                     <Text style={styles.inputLabel}>Next Review Date</Text>
                     <View style={styles.inputContainer}>
-                        <Image
-                            source={require('../assets/calendar-icon.png')} // You'll need to add this icon
-                            style={styles.inputIcon}
-                            resizeMode="contain"
-                        />
+                        <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
+                            <Image
+                                source={require('../assets/calendar-icon.png')}
+                                style={styles.inputIcon}
+                                resizeMode="contain"
+                            />
+                        </TouchableOpacity>
                         <TextInput
                             style={styles.input}
+                            value={tempDate}
                             placeholder="MM/DD/YYYY"
                             placeholderTextColor="#809CFF"
-                            value={reviewDate}
-                            onChangeText={setReviewDate}
+                            onChangeText={handleDateInput}
+                            keyboardType="numeric"
+                            maxLength={10}
                         />
-                    </View>
-
-                    {/* Category Field */}
-                    <Text style={styles.inputLabel}>Category</Text>
-                    <View style={styles.inputContainer}>
-                        <Image
-                            source={require('../assets/category-icon.png')} // You'll need to add this icon
-                            style={styles.inputIcon}
-                            resizeMode="contain"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Select type..."
-                            placeholderTextColor="#809CFF"
-                            value={category}
-                            onChangeText={setCategory}
-                        />
-                        <Image
-                            source={require('../assets/drop-down.png')}
-                            style={styles.dropdownIcon}
-                            resizeMode="contain"
-                        />
+                        <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
+                            <Image
+                                source={require('../assets/drop-down.png')}
+                                style={styles.dropdownIcon}
+                                resizeMode="contain"
+                            />
+                        </TouchableOpacity>
                     </View>
 
                     {/* Medication List Field */}
@@ -107,12 +491,100 @@ const PrescriptionFormScreen = ({ onBack }) => {
 
                     {/* Add Prescription Button */}
                     <TouchableOpacity
-                        style={styles.addButton}
+                        style={[styles.addButton, loading && styles.disabledButton]}
                         onPress={handleAddPrescription}
+                        disabled={loading}
                     >
-                        <Text style={styles.addButtonText}>Add Prescription</Text>
+                        <Text style={styles.addButtonText}>
+                            {loading ? 'Adding...' : 'Add Prescription'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Navigation Bar */}
+                <View style={styles.navigationContainer}>
+                    <View style={styles.navigationCard}>
+                        {/* Home Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleHomePress}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'home'
+                                        ? require('../assets/home-icon1.png')
+                                        : require('../assets/home-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* QR Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleQRPress}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'qr'
+                                        ? require('../assets/qr-icon1.png')
+                                        : require('../assets/qr-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Prescription Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('prescription')}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'prescription'
+                                        ? require('../assets/prescription-icon1.png')
+                                        : require('../assets/prescription-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'prescription' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Documents Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleReportsPress}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'documents'
+                                        ? require('../assets/docs-icon1.png')
+                                        : require('../assets/docs-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Custom Date Picker Modal */}
+                <CustomDatePicker
+                    visible={showDatePicker}
+                    selectedDate={selectedDateForPicker}
+                    onDateSelect={handleDateSelect}
+                    onCancel={handleCancelDatePicker}
+                />
             </ScrollView>
         </ScreenWrapper>
     );
@@ -122,6 +594,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFFFFF',
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
     header: {
         flexDirection: 'row',
@@ -137,7 +612,7 @@ const styles = StyleSheet.create({
     backText: {
         fontSize: 50,
         color: '#2260FF',
-        fontWeight: 'regular',
+        fontWeight: 'normal',
         marginTop: 0,
     },
     title: {
@@ -153,6 +628,7 @@ const styles = StyleSheet.create({
     formContainer: {
         paddingHorizontal: 20,
         marginBottom: 20,
+        flex: 1,
     },
     inputLabel: {
         fontSize: 16,
@@ -173,6 +649,10 @@ const styles = StyleSheet.create({
         height: 50,
         backgroundColor: '#ECF1FF',
     },
+    disabledInput: {
+        backgroundColor: '#F5F5F5',
+        borderColor: '#E0E0E0',
+    },
     textAreaContainer: {
         height: 220,
         alignItems: 'flex-start',
@@ -182,6 +662,15 @@ const styles = StyleSheet.create({
         height: 20,
         marginRight: 10,
         tintColor: '#809CFF',
+    },
+    dropdownIcon: {
+        width: 20,
+        height: 20,
+        tintColor: '#809CFF',
+        marginLeft: 10,
+    },
+    iconButton: {
+        padding: 5,
     },
     input: {
         flex: 1,
@@ -194,12 +683,6 @@ const styles = StyleSheet.create({
         paddingTop: 15,
         paddingBottom: 15,
     },
-    dropdownIcon: {
-        width: 20,
-        height: 20,
-        tintColor: '#809CFF',
-        marginLeft: 10,
-    },
     addButton: {
         backgroundColor: '#2260FF',
         borderRadius: 25,
@@ -210,10 +693,130 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         alignSelf: 'center',
     },
+    disabledButton: {
+        backgroundColor: '#809CFF',
+        opacity: 0.6,
+    },
     addButtonText: {
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: '600',
+    },
+    // Date Picker Styles
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    datePickerContainer: {
+        backgroundColor: 'white',
+        borderRadius: 15,
+        padding: 20,
+        width: '90%',
+        maxHeight: '80%',
+    },
+    datePickerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
+        color: '#2260FF',
+    },
+    pickerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    pickerContainer: {
+        flex: 1,
+        marginHorizontal: 5,
+    },
+    pickerLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 5,
+        color: '#2260FF',
+    },
+    pickerScroll: {
+        height: 150,
+        borderWidth: 1,
+        borderColor: '#ECF1FF',
+        borderRadius: 8,
+    },
+    pickerItem: {
+        paddingVertical: 8,
+        paddingHorizontal: 5,
+        alignItems: 'center',
+    },
+    selectedPickerItem: {
+        backgroundColor: '#2260FF',
+        borderRadius: 5,
+    },
+    pickerItemText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    selectedPickerItemText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    selectedDateText: {
+        textAlign: 'center',
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 20,
+        color: '#2260FF',
+    },
+    datePickerButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    datePickerButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
+    cancelButton: {
+        backgroundColor: '#F5F5F5',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+    },
+    confirmButton: {
+        backgroundColor: '#2260FF',
+    },
+    cancelButtonText: {
+        color: '#666',
+        fontWeight: '600',
+    },
+    confirmButtonText: {
+        color: 'white',
+        fontWeight: '600',
+    },
+    // Navigation Styles
+    navigationContainer: {
+        backgroundColor: '#FFFFFF',
+        padding: 15,
+        alignItems: 'center',
+    },
+    navigationCard: {
+        width: 298,
+        height: 48,
+        backgroundColor: '#2260FF',
+        borderRadius: 24,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+    navIcon: {
+        padding: 10,
+    },
+    navIconImage: {
+        width: 24,
+        height: 24,
     },
     activeIcon: {
         tintColor: 'black',

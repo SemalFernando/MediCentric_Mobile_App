@@ -2,9 +2,43 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const ReportsScreen = ({ onBack }) => {
+const ReportsScreen = ({ 
+    onBack, 
+    onNavigateToHome, 
+    onNavigateToQRScanner, 
+    onNavigateToPrescriptions,
+    onNavigateToAllergies 
+}) => {
     const [activePage, setActivePage] = useState('documents');
     const [selectedReport, setSelectedReport] = useState(null);
+
+    const handleHomePress = () => {
+        setActivePage('home');
+        if (onNavigateToHome) {
+            onNavigateToHome();
+        }
+    };
+
+    const handleQRPress = () => {
+        setActivePage('qr');
+        if (onNavigateToQRScanner) {
+            onNavigateToQRScanner();
+        }
+    };
+
+    const handlePrescriptionsPress = () => {
+        setActivePage('prescription');
+        if (onNavigateToPrescriptions) {
+            onNavigateToPrescriptions();
+        }
+    };
+
+    const handleAllergiesPress = () => {
+        setActivePage('allergies');
+        if (onNavigateToAllergies) {
+            onNavigateToAllergies();
+        }
+    };
 
     const handleReportPress = (reportId) => {
         setSelectedReport(reportId);
@@ -172,7 +206,7 @@ const ReportsScreen = ({ onBack }) => {
                         {/* Home Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('home')}
+                            onPress={handleHomePress}
                         >
                             <Image
                                 source={
@@ -190,7 +224,7 @@ const ReportsScreen = ({ onBack }) => {
                         {/* QR Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('qr')}
+                            onPress={handleQRPress}
                         >
                             <Image
                                 source={
@@ -208,7 +242,7 @@ const ReportsScreen = ({ onBack }) => {
                         {/* Prescription Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('prescription')}
+                            onPress={handlePrescriptionsPress}
                         >
                             <Image
                                 source={
@@ -256,7 +290,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 10, // Reduced from 20 to decrease gap
+        marginBottom: 10,
         marginTop: 30,
         paddingHorizontal: 20,
     },
@@ -266,8 +300,8 @@ const styles = StyleSheet.create({
     backText: {
         fontSize: 50,
         color: '#2260FF',
-        fontWeight: 'regular', // Changed from '100' to match login screen
-        marginTop: 0, // Removed negative margin to match login screen
+        fontWeight: 'regular',
+        marginTop: 0,
     },
     title: {
         fontSize: 24,
@@ -277,7 +311,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     placeholder: {
-        width: 24, // Changed from 40 to match login screen (24px space)
+        width: 24,
     },
     filterRow: {
         flexDirection: 'row',
@@ -302,7 +336,7 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
     },
     dateCardSpacing: {
-        height: 15, // Added space under second date card
+        height: 15,
     },
     dateText: {
         fontSize: 16,
@@ -327,8 +361,8 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     dropdownIcon: {
-        width: 24, // Increased from 20px
-        height: 24, // Increased from 20px
+        width: 24,
+        height: 24,
         tintColor: '#2260FF',
     },
     reportsList: {
@@ -343,7 +377,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         borderWidth: 1,
         borderColor: '#E5E5E5',
-        alignItems: 'center', // Changed from 'flex-start' to center vertically
+        alignItems: 'center',
     },
     selectedReportItem: {
         backgroundColor: '#CAD6FF',
@@ -357,7 +391,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
-        // Already left-aligned and centered
     },
     docIcon: {
         width: 24,

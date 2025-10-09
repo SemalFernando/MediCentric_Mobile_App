@@ -3,19 +3,19 @@ import { View, Text } from 'react-native';
 import SplashScreen from './src/pages/SplashScreen';
 import WelcomeScreen from './src/pages/WelcomeScreen';
 import InitialHomeScreen from './src/pages/InitialHomeScreen';
-import HomeScreen from './src/pages/HomeScreen'; // Import the new PatientHomeScreen
-import ReportsScreen from './src/pages/ReportsScreen'; // Import the ReportsScreen
-import PrescriptionsScreen from './src/pages/PrescriptionsScreen'; // Import the PrescriptionsScreen
-import PrescriptionFormScreen from './src/pages/PrescriptionFormScreen'; // Import the PrescriptionFormScreen
-import AllergiesScreen from './src/pages/AllergiesScreen'; // Import the AllergiesScreen
+import HomeScreen from './src/pages/HomeScreen';
+import ReportsScreen from './src/pages/ReportsScreen';
+import PrescriptionsScreen from './src/pages/PrescriptionsScreen';
+import PrescriptionFormScreen from './src/pages/PrescriptionFormScreen';
+import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
-import QRCodeScannerScreen from './src/pages/QRCodeScannerScreen'; // Import QR code screen
+import QRCodeScannerScreen from './src/pages/QRCodeScannerScreen';
 import PermissionTestScreen from './src/pages/PermissionTestScreen';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState('welcome');
-  const [scannedPatient, setScannedPatient] = useState(null); // Track scanned patient data
+  const [scannedPatient, setScannedPatient] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,7 +31,7 @@ const App = () => {
 
   // Handle navigation between screens
   const navigateToHome = () => {
-    setCurrentScreen('home'/*'initialHome'*/);
+    setCurrentScreen('home');
   };
 
   const navigateToWelcome = () => {
@@ -43,7 +43,7 @@ const App = () => {
   };
 
   const navigateToLogin = () => {
-    setCurrentScreen('welcome'); // Or create a separate login screen if needed
+    setCurrentScreen('welcome');
   };
 
   const navigateToQRScanner = () => {
@@ -51,7 +51,7 @@ const App = () => {
   };
 
   const navigateBackFromQR = () => {
-    setCurrentScreen('home'/*'initialHome'*/);
+    setCurrentScreen('home');
   };
 
   // Navigate to patient home screen after QR scan
@@ -62,7 +62,7 @@ const App = () => {
 
   // Navigate back from patient home to initial home
   const navigateBackToHome = () => {
-    setCurrentScreen('home'/*'initialHome'*/);
+    setCurrentScreen('initialHome');
   };
 
   // Navigate to reports screen
@@ -70,7 +70,6 @@ const App = () => {
     setCurrentScreen('reports');
   };
 
-  // Navigate back from reports
   const navigateBackFromReports = () => {
     setCurrentScreen('home');
   };
@@ -80,7 +79,6 @@ const App = () => {
     setCurrentScreen('prescriptions');
   };
 
-  // Navigate back from prescriptions
   const navigateBackFromPrescriptions = () => {
     setCurrentScreen('home');
   };
@@ -90,7 +88,6 @@ const App = () => {
     setCurrentScreen('allergies');
   };
 
-  // Navigate back from allergies
   const navigateBackFromAllergies = () => {
     setCurrentScreen('home');
   };
@@ -100,7 +97,6 @@ const App = () => {
     setCurrentScreen('prescriptionForm');
   };
 
-  // Navigate back from prescription form
   const navigateBackFromPrescriptionForm = () => {
     setCurrentScreen('home');
   };
@@ -130,24 +126,42 @@ const App = () => {
       return (
         <ReportsScreen
           onBack={navigateBackFromReports}
+          onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToAllergies={navigateToAllergies}
         />
       );
     case 'prescriptions':
       return (
         <PrescriptionsScreen
           onBack={navigateBackFromPrescriptions}
+          onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
+          onNavigateToReports={navigateToReports}
+          onNavigateToAllergies={navigateToAllergies}
+          onNavigateToPrescriptionForm={navigateToPrescriptionForm}
         />
       );
     case 'allergies':
       return (
         <AllergiesScreen
           onBack={navigateBackFromAllergies}
+          onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
+          onNavigateToReports={navigateToReports}
+          onNavigateToPrescriptions={navigateToPrescriptions}
         />
       );
     case 'prescriptionForm':
       return (
         <PrescriptionFormScreen
           onBack={navigateBackFromPrescriptionForm}
+          onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
+          onNavigateToReports={navigateToReports}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToAllergies={navigateToAllergies}
         />
       );
     case 'setPassword':
@@ -157,10 +171,11 @@ const App = () => {
         <QRCodeScannerScreen
           onBack={navigateBackFromQR}
           onPatientScanned={navigateToPatientHome}
+          onNavigateToHome={navigateToHome}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToReports={navigateToReports}
         />
       );
-    // case 'qrScanner':
-    //   return <PermissionTestScreen onBack={navigateBackFromQR} />;
     case 'welcome':
     default:
       return (

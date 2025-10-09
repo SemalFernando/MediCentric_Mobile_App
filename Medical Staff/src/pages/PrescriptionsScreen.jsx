@@ -2,9 +2,43 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const PrescriptionsScreen = ({ onBack }) => {
+const PrescriptionsScreen = ({ 
+    onBack, 
+    onNavigateToHome, 
+    onNavigateToQRScanner, 
+    onNavigateToReports,
+    onNavigateToAllergies 
+}) => {
     const [activePage, setActivePage] = useState('prescription');
     const [selectedPrescription, setSelectedPrescription] = useState(null);
+
+    const handleHomePress = () => {
+        setActivePage('home');
+        if (onNavigateToHome) {
+            onNavigateToHome();
+        }
+    };
+
+    const handleQRPress = () => {
+        setActivePage('qr');
+        if (onNavigateToQRScanner) {
+            onNavigateToQRScanner();
+        }
+    };
+
+    const handleReportsPress = () => {
+        setActivePage('documents');
+        if (onNavigateToReports) {
+            onNavigateToReports();
+        }
+    };
+
+    const handleAllergiesPress = () => {
+        setActivePage('allergies');
+        if (onNavigateToAllergies) {
+            onNavigateToAllergies();
+        }
+    };
 
     const handlePrescriptionPress = (prescriptionId) => {
         setSelectedPrescription(prescriptionId);
@@ -194,7 +228,7 @@ const PrescriptionsScreen = ({ onBack }) => {
                         {/* Home Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('home')}
+                            onPress={handleHomePress}
                         >
                             <Image
                                 source={
@@ -212,7 +246,7 @@ const PrescriptionsScreen = ({ onBack }) => {
                         {/* QR Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('qr')}
+                            onPress={handleQRPress}
                         >
                             <Image
                                 source={
@@ -248,7 +282,7 @@ const PrescriptionsScreen = ({ onBack }) => {
                         {/* Documents Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('documents')}
+                            onPress={handleReportsPress}
                         >
                             <Image
                                 source={

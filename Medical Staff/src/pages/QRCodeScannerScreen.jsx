@@ -3,7 +3,12 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Platform, Permi
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import { RNCamera } from 'react-native-camera';
 
-const QRCodeScannerScreen = ({ onBack }) => {
+const QRCodeScannerScreen = ({ 
+    onBack, 
+    onNavigateToHome, 
+    onNavigateToPrescriptions, 
+    onNavigateToReports 
+}) => {
     const [activePage, setActivePage] = useState('qr');
     const [scanned, setScanned] = useState(false);
     const [cameraReady, setCameraReady] = useState(false);
@@ -71,6 +76,29 @@ const QRCodeScannerScreen = ({ onBack }) => {
         setCameraReady(true);
     };
 
+    const handleHomePress = () => {
+        setActivePage('home');
+        if (onNavigateToHome) {
+            onNavigateToHome();
+        } else if (onBack) {
+            onBack();
+        }
+    };
+
+    const handlePrescriptionsPress = () => {
+        setActivePage('prescriptions');
+        if (onNavigateToPrescriptions) {
+            onNavigateToPrescriptions();
+        }
+    };
+
+    const handleReportsPress = () => {
+        setActivePage('documents');
+        if (onNavigateToReports) {
+            onNavigateToReports();
+        }
+    };
+
     // Show loading state
     if (hasCameraPermission === null) {
         return (
@@ -95,18 +123,48 @@ const QRCodeScannerScreen = ({ onBack }) => {
                 {/* Third Row - Navigation */}
                 <View style={styles.thirdRow}>
                     <View style={styles.navigationCard}>
-                        {/* Navigation icons */}
-                        <TouchableOpacity style={styles.navIcon} onPress={() => { setActivePage('home'); if (onBack) onBack(); }}>
-                            <Image source={require('../assets/home-icon2.png')} style={[styles.navIconImage, styles.inactiveIcon]} />
+                        {/* Home Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleHomePress}
+                        >
+                            <Image
+                                source={require('../assets/home-icon2.png')}
+                                style={[styles.navIconImage, styles.inactiveIcon]}
+                            />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navIcon} onPress={() => setActivePage('qr')}>
-                            <Image source={require('../assets/qr-icon1.png')} style={[styles.navIconImage, styles.activeIcon]} />
+
+                        {/* QR Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('qr')}
+                        >
+                            <Image
+                                source={require('../assets/qr-icon1.png')}
+                                style={[styles.navIconImage, styles.activeIcon]}
+                            />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navIcon} onPress={() => setActivePage('profile')}>
-                            <Image source={require('../assets/profile-icon2.png')} style={[styles.navIconImage, styles.inactiveIcon]} />
+
+                        {/* Prescription Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handlePrescriptionsPress}
+                        >
+                            <Image
+                                source={require('../assets/prescription-icon2.png')}
+                                style={[styles.navIconImage, styles.inactiveIcon]}
+                            />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navIcon} onPress={() => setActivePage('documents')}>
-                            <Image source={require('../assets/docs-icon2.png')} style={[styles.navIconImage, styles.inactiveIcon]} />
+
+                        {/* Documents Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleReportsPress}
+                        >
+                            <Image
+                                source={require('../assets/docs-icon2.png')}
+                                style={[styles.navIconImage, styles.inactiveIcon]}
+                            />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -144,18 +202,48 @@ const QRCodeScannerScreen = ({ onBack }) => {
                 {/* Third Row - Navigation */}
                 <View style={styles.thirdRow}>
                     <View style={styles.navigationCard}>
-                        {/* Navigation icons */}
-                        <TouchableOpacity style={styles.navIcon} onPress={() => { setActivePage('home'); if (onBack) onBack(); }}>
-                            <Image source={require('../assets/home-icon2.png')} style={[styles.navIconImage, styles.inactiveIcon]} />
+                        {/* Home Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleHomePress}
+                        >
+                            <Image
+                                source={require('../assets/home-icon2.png')}
+                                style={[styles.navIconImage, styles.inactiveIcon]}
+                            />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navIcon} onPress={() => setActivePage('qr')}>
-                            <Image source={require('../assets/qr-icon1.png')} style={[styles.navIconImage, styles.activeIcon]} />
+
+                        {/* QR Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('qr')}
+                        >
+                            <Image
+                                source={require('../assets/qr-icon1.png')}
+                                style={[styles.navIconImage, styles.activeIcon]}
+                            />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navIcon} onPress={() => setActivePage('profile')}>
-                            <Image source={require('../assets/profile-icon2.png')} style={[styles.navIconImage, styles.inactiveIcon]} />
+
+                        {/* Prescription Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handlePrescriptionsPress}
+                        >
+                            <Image
+                                source={require('../assets/prescription-icon2.png')}
+                                style={[styles.navIconImage, styles.inactiveIcon]}
+                            />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navIcon} onPress={() => setActivePage('documents')}>
-                            <Image source={require('../assets/docs-icon2.png')} style={[styles.navIconImage, styles.inactiveIcon]} />
+
+                        {/* Documents Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleReportsPress}
+                        >
+                            <Image
+                                source={require('../assets/docs-icon2.png')}
+                                style={[styles.navIconImage, styles.inactiveIcon]}
+                            />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -215,10 +303,7 @@ const QRCodeScannerScreen = ({ onBack }) => {
                     {/* Home Icon */}
                     <TouchableOpacity
                         style={styles.navIcon}
-                        onPress={() => {
-                            setActivePage('home');
-                            if (onBack) onBack();
-                        }}
+                        onPress={handleHomePress}
                     >
                         <Image
                             source={require('../assets/home-icon2.png')}
@@ -237,13 +322,13 @@ const QRCodeScannerScreen = ({ onBack }) => {
                         />
                     </TouchableOpacity>
 
-                    {/* Profile Icon */}
+                    {/* Prescription Icon */}
                     <TouchableOpacity
                         style={styles.navIcon}
-                        onPress={() => setActivePage('profile')}
+                        onPress={handlePrescriptionsPress}
                     >
                         <Image
-                            source={require('../assets/profile-icon2.png')}
+                            source={require('../assets/prescription-icon2.png')}
                             style={[styles.navIconImage, styles.inactiveIcon]}
                         />
                     </TouchableOpacity>
@@ -251,7 +336,7 @@ const QRCodeScannerScreen = ({ onBack }) => {
                     {/* Documents Icon */}
                     <TouchableOpacity
                         style={styles.navIcon}
-                        onPress={() => setActivePage('documents')}
+                        onPress={handleReportsPress}
                     >
                         <Image
                             source={require('../assets/docs-icon2.png')}
