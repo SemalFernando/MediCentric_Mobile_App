@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StatusBar, Platform, StyleSheet, BackHandler } from 'react-native';
+import { StatusBar, Platform, StyleSheet, BackHandler, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // For Android navigation bar
@@ -90,7 +90,7 @@ const ScreenWrapper = ({
   return (
     <SafeAreaView 
       style={[styles.container, { backgroundColor }]} 
-      edges={['right', 'left', 'top']}
+      edges={['right', 'left']} // REMOVED 'top' from here - this fixes the margin issue
     >
       <StatusBar 
         backgroundColor={translucent ? 'transparent' : backgroundColor}

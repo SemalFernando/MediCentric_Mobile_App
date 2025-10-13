@@ -4,9 +4,9 @@
     <!-- Camera Permission -->
     <uses-permission android:name="android.permission.CAMERA" />
     
-    <!-- Required for Android 6.0+ -->
+    <!-- Required for Android 6.0+
     <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.camera.autofocus" /> -->
 
     <application
       android:name=".MainApplication"

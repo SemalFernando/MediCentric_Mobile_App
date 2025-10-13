@@ -2,16 +2,14 @@ import React, { useState, useCallback, memo } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, Modal, Platform } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-// Memoized Custom Date Picker Component
+// Memoized Custom Date Picker Component (same as prescription screen)
 const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }) => {
   const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
 
-  // Update local date when prop changes
   React.useEffect(() => {
     setLocalSelectedDate(selectedDate);
   }, [selectedDate]);
 
-  // Helper function to get days in month - MOVED BEFORE ITS USAGE
   const getDaysInMonth = (year, month) => {
     return new Date(year, month + 1, 0).getDate();
   };
@@ -39,13 +37,10 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
   const handleMonthSelect = (monthIndex) => {
     const newDate = new Date(localSelectedDate);
     newDate.setMonth(monthIndex);
-    
-    // Adjust day if it exceeds days in new month
     const daysInNewMonth = getDaysInMonth(newDate.getFullYear(), monthIndex);
     if (newDate.getDate() > daysInNewMonth) {
       newDate.setDate(daysInNewMonth);
     }
-    
     setLocalSelectedDate(newDate);
   };
 
@@ -58,13 +53,10 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
   const handleYearSelect = (year) => {
     const newDate = new Date(localSelectedDate);
     newDate.setFullYear(year);
-    
-    // Adjust day if it exceeds days in February for leap years
     const daysInNewMonth = getDaysInMonth(year, newDate.getMonth());
     if (newDate.getDate() > daysInNewMonth) {
       newDate.setDate(daysInNewMonth);
     }
-    
     setLocalSelectedDate(newDate);
   };
 
@@ -73,7 +65,6 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
   };
 
   const handleCancel = () => {
-    // Reset to original selected date when canceling
     setLocalSelectedDate(selectedDate);
     onCancel();
   };
@@ -86,16 +77,12 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
     >
       <View style={styles.modalContainer}>
         <View style={styles.datePickerContainer}>
-          <Text style={styles.datePickerTitle}>Select Review Date</Text>
+          <Text style={styles.datePickerTitle}>Select Report Date</Text>
           
           <View style={styles.pickerRow}>
-            {/* Month Picker */}
             <View style={styles.pickerContainer}>
               <Text style={styles.pickerLabel}>Month</Text>
-              <ScrollView 
-                style={styles.pickerScroll} 
-                showsVerticalScrollIndicator={false}
-              >
+              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                 {months.map((month, index) => (
                   <TouchableOpacity
                     key={month}
@@ -116,13 +103,9 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
               </ScrollView>
             </View>
 
-            {/* Day Picker */}
             <View style={styles.pickerContainer}>
               <Text style={styles.pickerLabel}>Day</Text>
-              <ScrollView 
-                style={styles.pickerScroll} 
-                showsVerticalScrollIndicator={false}
-              >
+              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                 {days.map((day) => (
                   <TouchableOpacity
                     key={day}
@@ -143,13 +126,9 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
               </ScrollView>
             </View>
 
-            {/* Year Picker */}
             <View style={styles.pickerContainer}>
               <Text style={styles.pickerLabel}>Year</Text>
-              <ScrollView 
-                style={styles.pickerScroll} 
-                showsVerticalScrollIndicator={false}
-              >
+              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
                 {years.map((year) => (
                   <TouchableOpacity
                     key={year}
@@ -195,22 +174,20 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
   );
 });
 
-const PrescriptionFormScreen = ({ 
-    onBack, 
-    onNavigateToHome, 
-    onNavigateToQRScanner, 
-    onNavigateToReports 
-}) => {
-    const [issueDate] = useState(new Date());
-    const [reviewDate, setReviewDate] = useState(null);
+const LabReportFormScreen = ({ onBack }) => {
+    const [reportDate, setReportDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [medicationList, setMedicationList] = useState('');
+    const [reportStatus, setReportStatus] = useState('');
+    const [reportResult, setReportResult] = useState('');
+    const [reportType, setReportType] = useState('');
+    const [reportDescription, setReportDescription] = useState('');
+    const [uploadedDoc, setUploadedDoc] = useState('');
     const [loading, setLoading] = useState(false);
     const [tempDate, setTempDate] = useState('');
     const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
 
-    const baseUrl = 'http://10.239.134.247:8080';
-    const patientId = 'P1234';
+    const baseUrl = 'http://10.87.143.247:8080';
+    const patientId = 'P123';
 
     // Format date for display
     const formatDate = useCallback((date) => {
@@ -229,7 +206,6 @@ const PrescriptionFormScreen = ({
         if (parts.length !== 3) return null;
         
         const [month, day, year] = parts;
-        // Validate month and day ranges
         const monthNum = parseInt(month, 10);
         const dayNum = parseInt(day, 10);
         const yearNum = parseInt(year, 10);
@@ -239,7 +215,6 @@ const PrescriptionFormScreen = ({
         }
         
         const parsedDate = new Date(yearNum, monthNum - 1, dayNum);
-        // Check if date is valid
         if (isNaN(parsedDate.getTime()) || 
             parsedDate.getMonth() !== monthNum - 1 || 
             parsedDate.getDate() !== dayNum) {
@@ -266,28 +241,28 @@ const PrescriptionFormScreen = ({
             try {
                 const parsedDate = parseDate(formatted);
                 if (parsedDate && !isNaN(parsedDate.getTime())) {
-                    setReviewDate(parsedDate);
+                    setReportDate(parsedDate);
                 } else {
-                    setReviewDate(null);
+                    setReportDate(null);
                 }
             } catch (error) {
                 console.log('Invalid date');
-                setReviewDate(null);
+                setReportDate(null);
             }
         } else {
-            setReviewDate(null);
+            setReportDate(null);
         }
     }, [parseDate]);
 
     // Show custom date picker
     const showCustomDatePicker = useCallback(() => {
-        setSelectedDateForPicker(reviewDate || new Date());
+        setSelectedDateForPicker(reportDate || new Date());
         setShowDatePicker(true);
-    }, [reviewDate]);
+    }, [reportDate]);
 
     // Handle date selection from custom picker
     const handleDateSelect = useCallback((date) => {
-        setReviewDate(date);
+        setReportDate(date);
         setTempDate(formatDate(date));
         setShowDatePicker(false);
     }, [formatDate]);
@@ -302,85 +277,91 @@ const PrescriptionFormScreen = ({
         showCustomDatePicker();
     }, [showCustomDatePicker]);
 
-    // Handle adding prescription
-    const handleAddPrescription = async () => {
-        if (!medicationList.trim()) {
-            Alert.alert('Error', 'Please enter medication list');
+    // Handle document upload (simulated)
+    const handleDocumentUpload = useCallback(() => {
+        // In a real app, this would open document picker
+        Alert.alert('Upload Document', 'Document upload functionality would be implemented here');
+        setUploadedDoc('document.pdf'); // Simulate uploaded document
+    }, []);
+
+    // Handle adding lab report
+    const handleAddLabReport = async () => {
+        if (!reportStatus.trim()) {
+            Alert.alert('Error', 'Please enter report status');
+            return;
+        }
+        if (!reportResult.trim()) {
+            Alert.alert('Error', 'Please enter report result');
+            return;
+        }
+        if (!reportType.trim()) {
+            Alert.alert('Error', 'Please enter report type');
             return;
         }
 
-        let finalReviewDate = reviewDate;
+        let finalReportDate = reportDate;
         
-        // If no review date but we have temp date, try to parse it
-        if (!reviewDate && tempDate && tempDate.length === 10) {
+        if (!reportDate && tempDate && tempDate.length === 10) {
             try {
-                finalReviewDate = parseDate(tempDate);
-                if (!finalReviewDate || isNaN(finalReviewDate.getTime())) {
-                    Alert.alert('Error', 'Please enter a valid review date');
+                finalReportDate = parseDate(tempDate);
+                if (!finalReportDate || isNaN(finalReportDate.getTime())) {
+                    Alert.alert('Error', 'Please enter a valid report date');
                     return;
                 }
             } catch (error) {
-                Alert.alert('Error', 'Please enter a valid review date');
+                Alert.alert('Error', 'Please enter a valid report date');
                 return;
             }
         }
 
-        // If still no valid date
-        if (!finalReviewDate || isNaN(finalReviewDate.getTime())) {
-            Alert.alert('Error', 'Please select a valid review date');
-            return;
-        }
-
-        // Clear time part for date comparison
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const reviewDateCopy = new Date(finalReviewDate);
-        reviewDateCopy.setHours(0, 0, 0, 0);
-
-        if (reviewDateCopy < today) {
-            Alert.alert('Error', 'Review date cannot be in the past');
+        if (!finalReportDate || isNaN(finalReportDate.getTime())) {
+            Alert.alert('Error', 'Please select a valid report date');
             return;
         }
 
         try {
             setLoading(true);
             
-            const prescriptionData = {
-                doctorId: "D789",
-                category: "CHRONIC",
-                notes: medicationList.trim()
+            const labReportData = {
+                patientId: patientId,
+                reportDate: finalReportDate.toISOString().split('T')[0],
+                status: reportStatus.trim(),
+                result: reportResult.trim(),
+                type: reportType.trim(),
+                description: reportDescription.trim(),
+                document: uploadedDoc || null
             };
 
-            console.log('Sending prescription data:', prescriptionData);
+            console.log('Sending lab report data:', labReportData);
 
-            const response = await fetch(`${baseUrl}/patients/${patientId}/prescriptions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(prescriptionData),
-            });
+            // Simulate API call
+            // const response = await fetch(`${baseUrl}/patients/${patientId}/lab-reports`, {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify(labReportData),
+            // });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-            }
+            // Simulate success
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const result = await response.json();
-            console.log('Prescription added successfully:', result);
-            
-            Alert.alert('Success', 'Prescription added successfully!', [
+            Alert.alert('Success', 'Lab report added successfully!', [
                 { text: 'OK', onPress: () => {
-                    setMedicationList('');
-                    setReviewDate(null);
+                    setReportStatus('');
+                    setReportResult('');
+                    setReportType('');
+                    setReportDescription('');
+                    setUploadedDoc('');
+                    setReportDate(new Date());
                     setTempDate('');
                     if (onBack) onBack();
                 }}
             ]);
 
         } catch (error) {
-            console.error('Error adding prescription:', error);
-            Alert.alert('Error', `Failed to add prescription: ${error.message}`);
+            console.error('Error adding lab report:', error);
+            Alert.alert('Error', `Failed to add lab report: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -399,30 +380,31 @@ const PrescriptionFormScreen = ({
                     <TouchableOpacity onPress={onBack} style={styles.backButton}>
                         <Text style={styles.backText}>‹</Text>
                     </TouchableOpacity>
-                    <Text style={styles.title}>New Prescription</Text>
+                    <Text style={styles.title}>New Lab Report</Text>
                     <View style={styles.placeholder} />
                 </View>
 
                 {/* Form Fields */}
                 <View style={styles.formContainer}>
-                    {/* Issue Date Field - Read Only */}
-                    <Text style={styles.inputLabel}>Issue Date</Text>
-                    <View style={[styles.inputContainer, styles.disabledInput]}>
+                    {/* Report Status Field */}
+                    <Text style={styles.inputLabel}>Report Status</Text>
+                    <View style={styles.inputContainer}>
                         <Image
-                            source={require('../assets/calendar-icon.png')}
+                            source={require('../assets/status-icon.png')}
                             style={styles.inputIcon}
                             resizeMode="contain"
                         />
                         <TextInput
                             style={styles.input}
-                            value={formatDate(issueDate)}
-                            editable={false}
+                            value={reportStatus}
+                            placeholder="Enter report status (e.g., Completed, Pending)"
                             placeholderTextColor="#809CFF"
+                            onChangeText={setReportStatus}
                         />
                     </View>
 
-                    {/* Next Review Date Field */}
-                    <Text style={styles.inputLabel}>Next Review Date</Text>
+                    {/* Report Date Field */}
+                    <Text style={styles.inputLabel}>Report Date</Text>
                     <View style={styles.inputContainer}>
                         <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
                             <Image
@@ -449,29 +431,76 @@ const PrescriptionFormScreen = ({
                         </TouchableOpacity>
                     </View>
 
-                    {/* Medication List Field */}
-                    <Text style={styles.inputLabel}>Medication List</Text>
+                    {/* Report Result Field */}
+                    <Text style={styles.inputLabel}>Report Result</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/result-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={reportResult}
+                            placeholder="Enter report result"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setReportResult}
+                        />
+                    </View>
+
+                    {/* Report Type Field */}
+                    <Text style={styles.inputLabel}>Report Type</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/type-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={reportType}
+                            placeholder="Enter report type (e.g., Blood Test, Urine Analysis)"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setReportType}
+                        />
+                    </View>
+
+                    {/* Report Description Field */}
+                    <Text style={styles.inputLabel}>Report Description</Text>
                     <View style={[styles.inputContainer, styles.textAreaContainer]}>
                         <TextInput
                             style={[styles.input, styles.textArea]}
-                            placeholder="Enter medications, dosage, and instructions..."
+                            placeholder="Enter detailed report description and findings..."
                             placeholderTextColor="#809CFF"
-                            value={medicationList}
-                            onChangeText={setMedicationList}
+                            value={reportDescription}
+                            onChangeText={setReportDescription}
                             multiline={true}
                             numberOfLines={4}
                             textAlignVertical="top"
                         />
                     </View>
 
-                    {/* Add Prescription Button */}
+                    {/* Upload Report Document Field */}
+                    <Text style={styles.inputLabel}>Upload Report Document</Text>
+                    <TouchableOpacity style={styles.uploadContainer} onPress={handleDocumentUpload}>
+                        <Image
+                            source={require('../assets/upload-icon.png')}
+                            style={styles.uploadIcon}
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.uploadText}>
+                            {uploadedDoc ? uploadedDoc : 'Tap to upload document'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {/* Add Lab Report Button */}
                     <TouchableOpacity
                         style={[styles.addButton, loading && styles.disabledButton]}
-                        onPress={handleAddPrescription}
+                        onPress={handleAddLabReport}
                         disabled={loading}
                     >
                         <Text style={styles.addButtonText}>
-                            {loading ? 'Adding...' : 'Add Prescription'}
+                            {loading ? 'Adding...' : 'Add Lab Report'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -547,12 +576,8 @@ const styles = StyleSheet.create({
         height: 50,
         backgroundColor: '#ECF1FF',
     },
-    disabledInput: {
-        backgroundColor: '#F5F5F5',
-        borderColor: '#E0E0E0',
-    },
     textAreaContainer: {
-        height: 220,
+        height: 120,
         alignItems: 'flex-start',
     },
     inputIcon: {
@@ -580,6 +605,28 @@ const styles = StyleSheet.create({
         height: '100%',
         paddingTop: 15,
         paddingBottom: 15,
+    },
+    uploadContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ECF1FF',
+        borderRadius: 10,
+        marginBottom: 20,
+        paddingHorizontal: 15,
+        height: 50,
+        backgroundColor: '#ECF1FF',
+    },
+    uploadIcon: {
+        width: 20,
+        height: 20,
+        marginRight: 10,
+        tintColor: '#809CFF',
+    },
+    uploadText: {
+        flex: 1,
+        fontSize: 16,
+        color: '#809CFF',
     },
     addButton: {
         backgroundColor: '#2260FF',
@@ -696,4 +743,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PrescriptionFormScreen;
+export default LabReportFormScreen;

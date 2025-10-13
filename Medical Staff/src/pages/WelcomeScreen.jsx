@@ -5,7 +5,7 @@ import LoginScreen from '../pages/LoginScreen';
 import SignUpScreen from '../pages/SignupScreen';
 import SetPasswordScreen from '../pages/SetPasswordScreen';
 
-const WelcomeScreen = ({ onNavigateToHome }) => {
+const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToScanReport }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
   const [showSetPassword, setShowSetPassword] = useState(false);
@@ -75,6 +75,14 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
     setShowRoleModal(false);
+    
+    // Direct navigation based on role
+    if (role.id === 'lab_technician') {
+      onNavigateToLabReport();
+    } else if (role.id === 'radiologist') {
+      onNavigateToScanReport();
+    }
+    // Doctor will stay on welcome screen for login/signup
   };
 
   const RoleButton = ({ role, onPress }) => (
@@ -119,7 +127,8 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
           </Text>
         </TouchableOpacity>
 
-        {selectedRole && (
+        {/* Show auth buttons only for Doctor role */}
+        {selectedRole && selectedRole.id === 'doctor' && (
           <View style={styles.authButtonsContainer}>
             <TouchableOpacity
               style={styles.loginButton}
@@ -139,6 +148,27 @@ const WelcomeScreen = ({ onNavigateToHome }) => {
               }}
             >
               <Text style={styles.signupButtonText}>SignUp as {selectedRole.label}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Show direct access message for Lab Technician and Radiologist */}
+        {(selectedRole?.id === 'lab_technician' || selectedRole?.id === 'radiologist') && (
+          <View style={styles.directAccessContainer}>
+            <Text style={styles.directAccessText}>
+              {selectedRole.label} access granted. You can now use the {selectedRole.id === 'lab_technician' ? 'Lab Report' : 'Scan Report'} features.
+            </Text>
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={() => {
+                if (selectedRole.id === 'lab_technician') {
+                  onNavigateToLabReport();
+                } else if (selectedRole.id === 'radiologist') {
+                  onNavigateToScanReport();
+                }
+              }}
+            >
+              <Text style={styles.continueButtonText}>Continue as {selectedRole.label}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -264,6 +294,31 @@ const styles = StyleSheet.create({
   signupButtonText: {
     color: '#2260FF',
     fontSize: 15,
+    fontWeight: '600',
+  },
+  directAccessContainer: {
+    width: '80%',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  directAccessText: {
+    fontSize: 14,
+    color: '#2260FF',
+    textAlign: 'center',
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  continueButton: {
+    backgroundColor: '#2260FF',
+    borderRadius: 25,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   modalContainer: {
