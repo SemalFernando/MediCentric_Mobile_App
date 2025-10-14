@@ -75,15 +75,16 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk 33  // Changed from compileSdkVersion to compileSdk and set to 33
+    compileSdkVersion 33  // Changed from compileSdkVersion to compileSdk and set to 33
 
     namespace "com.myapp"
     defaultConfig {
         applicationId "com.myapp"
-        minSdk 23  // Changed from minSdkVersion to minSdk and set to 23 (Android 6.0+)
-        targetSdk 33  // Changed from targetSdkVersion to targetSdk and set to 33 (Android 13)
+        minSdkVersion 23  // Changed from minSdkVersion to minSdk and set to 23 (Android 6.0+)
+        targetSdkVersion 33  // Changed from targetSdkVersion to targetSdk and set to 33 (Android 13)
         versionCode 1
         versionName "1.0"
+        missingDimensionStrategy 'react-native-camera', 'general'
     }
     signingConfigs {
         debug {
