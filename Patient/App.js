@@ -61,7 +61,7 @@ const App = () => {
   switch (currentScreen) {
     case 'home':
       return (
-        <ConsentScreen
+        <HomeScreen
           onBack={navigateToWelcome}
           onLogout={handleLogout}
           patientData={scannedPatient}

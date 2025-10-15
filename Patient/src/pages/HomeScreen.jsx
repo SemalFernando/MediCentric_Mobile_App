@@ -1,206 +1,282 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 
-const HomeScreen = () => {
+const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile }) => {
+    const [activePage, setActivePage] = useState('home'); // Track the active page
+
+    const handleQRPress = () => {
+        setActivePage('qr');
+        // Navigate to QR scanning page using the prop
+        if (onNavigateToQRScanner) {
+            onNavigateToQRScanner();
+        }
+    };
+
+    const handleReportsPress = () => {
+        setActivePage('documents');
+        if (onNavigateToReports) {
+            onNavigateToReports();
+        }
+    };
+
+    const handlePrescriptionsPress = () => {
+        setActivePage('prescriptions');
+        if (onNavigateToPrescriptions) {
+            onNavigateToPrescriptions();
+        }
+    };
+
+    const handleAllergiesPress = () => {
+        if (onNavigateToAllergies) {
+            onNavigateToAllergies();
+        }
+    };
+
+    const handleAddPrescriptionPress = () => {
+        if (onNavigateToPrescriptionForm) {
+            onNavigateToPrescriptionForm();
+        }
+    };
+
+    const handleProfilePress = () => {
+        if (onNavigateToProfile) {
+            onNavigateToProfile();
+        }
+    };
+
     return (
-        <ScrollView style={styles.container}>
-            {/* First Row - White Background */}
-            <View style={styles.firstRow}>
-                {/* First Horizontal Row: Profile + Icons */}
-                <View style={styles.firstHorizontalRow}>
-                    {/* Left Section: Profile and Welcome */}
-                    <View style={styles.profileSection}>
-                        <Image
-                            source={require('../assets/profile-pic.png')}
-                            style={styles.profilePic}
-                        />
-                        <View style={styles.welcomeText}>
-                            <Text style={styles.welcomeBack}>Welcome back!</Text>
-                            <Text style={styles.doctorName}>Dr. John Doe</Text>
+        <ScreenWrapper
+            backgroundColor="#FFFFFF"
+            statusBarStyle="dark-content"
+            barStyle="dark-content"
+            translucent={false}
+        >
+            <ScrollView style={styles.container}>
+                {/* First Row - White Background */}
+                <View style={styles.firstRow}>
+                    {/* First Horizontal Row: Profile + Icons */}
+                    <View style={styles.firstHorizontalRow}>
+                        {/* Left Section: Profile and Welcome */}
+                        <TouchableOpacity
+                            style={styles.profileSection}
+                            onPress={handleProfilePress}
+                        >
+                            <Image
+                                source={require('../assets/profile-pic.png')}
+                                style={styles.profilePic}
+                            />
+                            <View style={styles.welcomeText}>
+                                <Text style={styles.welcomeBack}>Welcome back!</Text>
+                                <Text style={styles.doctorName}>Dr. John Wick</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* Right Section: Notification and Settings Icons */}
+                        <View style={styles.iconsSection}>
+                            <TouchableOpacity style={styles.iconCircle}>
+                                <Image
+                                    source={require('../assets/notification-icon.png')}
+                                    style={styles.icon}
+                                />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.iconCircle}
+                                onPress={handleProfilePress}
+                            >
+                                <Image
+                                    source={require('../assets/settings-icon.png')}
+                                    style={styles.icon}
+                                />
+                            </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* Right Section: Notification and Settings Icons */}
-                    <View style={styles.iconsSection}>
-                        <TouchableOpacity style={styles.iconCircle}>
-                            <Image
-                                source={require('../assets/notification-icon.png')}
-                                style={styles.icon}
-                            />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.iconCircle}>
-                            <Image
-                                source={require('../assets/settings-icon.png')}
-                                style={styles.icon}
-                            />
-                        </TouchableOpacity>
-                    </View>
+                    {/* Divider Line */}
+                    <View style={styles.divider} />
                 </View>
 
-                {/* Second Horizontal Row: Doctors, Favorite + Search */}
-                <View style={styles.secondHorizontalRow}>
-                    {/* Left Section: Doctors and Favorite with icons above text */}
-                    <View style={styles.linksSection}>
-                        <TouchableOpacity style={styles.linkItem}>
-                            <Image
-                                source={require('../assets/doctors-icon.png')}
-                                style={styles.linkIcon}
-                            />
-                            <Text style={styles.linkText}>Doctors</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.linkItem}>
-                            <Image
-                                source={require('../assets/favorite-icon.png')}
-                                style={styles.linkIcon}
-                            />
-                            <Text style={styles.linkText}>Favorite</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Right Section: Search Bar */}
-                    <View style={styles.searchSection}>
-                        <View style={styles.searchBar}>
-                            <Image
-                                source={require('../assets/search-icon.png')}
-                                style={styles.searchIcon}
-                            />
-                            <TextInput
-                                style={styles.searchInput}
-                                placeholder="search..."
-                                placeholderTextColor="#809CFF"
-                            />
+                {/* Second Row - CAD6FF Background */}
+                <View style={styles.secondRow}>
+                    <View style={styles.cardsContainer}>
+                        {/* Patient Name Card */}
+                        <View style={styles.patientCard}>
+                            <Text style={styles.patientTitle}>Patient: Mr. Ryan Ravinathan</Text>
                         </View>
-                    </View>
-                </View>
 
-                {/* Divider Line */}
-                <View style={styles.divider} />
+                        {/* Add New Prescription Button */}
+                        <TouchableOpacity
+                            style={styles.addPrescriptionButton}
+                            onPress={handleAddPrescriptionPress}
+                        >
+                            <Text style={styles.addPrescriptionText}>+ Add new prescription</Text>
+                        </TouchableOpacity>
 
-                {/* Patient Summary Title */}
-                <Text style={styles.patientSummaryTitle}>Patient Summary:</Text>
-            </View>
+                        {/* Two Column Layout */}
+                        <View style={styles.twoColumnContainer}>
+                            {/* Left Column */}
+                            <View style={styles.leftColumn}>
+                                {/* Blood Type Card */}
+                                <View style={styles.smallCard}>
+                                    <Text style={styles.bloodTypeText}>Blood Type: O+</Text>
+                                </View>
 
-            {/* Second Row - CAD6FF Background */}
-            <View style={styles.secondRow}>
-                <View style={styles.cardsContainer}>
-                    {/* Patient Name Card - Single line */}
-                    <View style={styles.patientNameCard}>
-                        <Text style={styles.patientNameLabel}>Patient Name: </Text>
-                        <Text style={styles.patientNameValue}>Mr. Ryan Ravikumar</Text>
-                    </View>
-
-                    {/* Two Columns Layout */}
-                    <View style={styles.twoColumns}>
-                        {/* Left Column */}
-                        <View style={styles.leftColumn}>
-                            {/* Blood Type Card */}
-                            <View style={styles.bloodTypeCard}>
-                                <View style={styles.bloodTypeRow}>
-                                    <Text style={styles.bloodTypeLabel}>Blood Type: </Text>
-                                    <Text style={styles.bloodTypeValue}>O+</Text>
+                                {/* Allergies Card */}
+                                <View style={styles.allergiesCard}>
+                                    <Text style={styles.cardTitle}>Allergies</Text>
+                                    <View style={styles.cardDivider} />
+                                    <View style={styles.allergiesList}>
+                                        <View style={styles.allergyItem}>
+                                            <Text style={styles.allergyName}>• Penicillin</Text>
+                                            <Text style={styles.allergySeverity}>Severity: Moderate</Text>
+                                        </View>
+                                        <View style={styles.allergyItem}>
+                                            <Text style={styles.allergyName}>• Peanuts</Text>
+                                            <Text style={styles.allergySeverity}>Severity: Severe</Text>
+                                        </View>
+                                        <View style={styles.allergyItem}>
+                                            <Text style={styles.allergyName}>• Aspirin</Text>
+                                            <Text style={styles.allergySeverity}>Severity: Moderate</Text>
+                                        </View>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.viewButton}
+                                        onPress={handleAllergiesPress}
+                                    >
+                                        <Text style={styles.viewButtonText}>View Allergies</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
 
-                            {/* Allergies Card */}
-                            <View style={styles.allergiesCard}>
-                                <Text style={styles.cardTitleCenter}>Allergies</Text>
-                                <View style={styles.cardDivider} />
-                                <View style={styles.allergyItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.allergyText}>Penicillin, Severity: Moderate</Text>
-                                </View>
-                                <View style={styles.allergyItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.allergyText}>Peanuts, Severity: Severe</Text>
-                                </View>
-                                <View style={styles.buttonContainer}>
-                                    <TouchableOpacity style={styles.viewMoreButton}>
-                                        <Text style={styles.viewMoreText}>view more</Text>
+                            {/* Right Column */}
+                            <View style={styles.rightColumn}>
+                                {/* Recent Lab Reports Card */}
+                                <View style={styles.labReportsCard}>
+                                    <Text style={styles.cardTitle}>Recent Lab Reports</Text>
+                                    <View style={styles.cardDivider} />
+                                    <View style={styles.reportsList}>
+                                        <View style={styles.reportItem}>
+                                            <Text style={styles.reportName}>• Blood Count (FBC)</Text>
+                                            <Text style={styles.reportDetail}>Date: July 10, 2025</Text>
+                                            <Text style={styles.reportDetail}>Status: Normal</Text>
+                                        </View>
+                                        <View style={styles.reportItem}>
+                                            <Text style={styles.reportName}>• Lipid Panel</Text>
+                                            <Text style={styles.reportDetail}>Date: June 28, 2025</Text>
+                                            <Text style={styles.reportDetail}>Status: Elevated</Text>
+                                        </View>
+                                        <View style={styles.reportItem}>
+                                            <Text style={styles.reportName}>• Liver Function Test</Text>
+                                            <Text style={styles.reportDetail}>Date: June 15, 2025</Text>
+                                            <Text style={styles.reportDetail}>Status: Normal</Text>
+                                        </View>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.viewButton}
+                                        onPress={handleReportsPress}
+                                    >
+                                        <Text style={styles.viewButtonText}>View Reports</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
                         </View>
 
-                        {/* Right Column - Recent Lab Reports Card */}
-                        <View style={styles.rightColumn}>
-                            <View style={styles.labReportsCard}>
-                                <Text style={styles.cardTitleCenter}>Recent Lab Reports</Text>
-                                <View style={styles.cardDivider} />
-                                <View style={styles.reportItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.reportText}>Complete Blood Count (CBC) Date: July 10, 2025 - Status: Normal</Text>
-                                </View>
-                                <View style={styles.reportItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.reportText}>Lipid Panel Date: June 25, 2025 - Status: Normal</Text>
-                                </View>
-                                <View style={styles.reportItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.reportText}>Glucose Test Date: June 15, 2025 - Status: Elevated</Text>
-                                </View>
-                                <View style={styles.buttonContainer}>
-                                    <TouchableOpacity style={styles.viewMoreButton}>
-                                        <Text style={styles.viewMoreText}>view more</Text>
-                                    </TouchableOpacity>
-                                </View>
+                        {/* Current Medication Card - Full Width */}
+                        <View style={styles.medicationCard}>
+                            <Text style={styles.lastPrescription}>• Last Prescription: July 10, 2025</Text>
+                            <View style={styles.cardDivider} />
+                            <View style={styles.medicationList}>
+                                <Text style={styles.medicationItem}>• Ibuprofen</Text>
+                                <Text style={styles.medicationItem}>• Amoxicillin</Text>
                             </View>
-                        </View>
-                    </View>
-
-                    {/* Current Medication Card - Full width below the columns */}
-                    <View style={styles.medicationCard}>
-                        <Text style={styles.cardTitleCenter}>Current Medication</Text>
-                        <View style={styles.cardDivider} />
-                        <View style={styles.medicationItem}>
-                            <Text style={styles.bullet}>•</Text>
-                            <Text style={styles.medicationText}>Last Prescription: July 10, 2025</Text>
-                        </View>
-                        <View style={styles.subMedication}>
-                            <Text style={styles.subBullet}>-</Text>
-                            <Text style={styles.subMedicationText}>Ibuprofen</Text>
-                        </View>
-                        <View style={styles.subMedication}>
-                            <Text style={styles.subBullet}>-</Text>
-                            <Text style={styles.subMedicationText}>Amoxicillin</Text>
-                        </View>
-                        <View style={styles.subMedication}>
-                            <Text style={styles.subBullet}>-</Text>
-                            <Text style={styles.subMedicationText}>Metformin</Text>
-                        </View>
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.viewMoreButton}>
-                                <Text style={styles.viewMoreText}>view more</Text>
+                            <TouchableOpacity
+                                style={styles.viewPrescriptionsButton}
+                                onPress={handlePrescriptionsPress}
+                            >
+                                <Text style={styles.viewButtonText}>View Prescriptions</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
-            </View>
 
-            {/* Third Row - Navigation */}
-            <View style={styles.thirdRow}>
-                <View style={styles.navigationCard}>
-                    {/* Home Icon - Black (current page) */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/home-icon1.png')} style={styles.navIconImage} />
-                    </TouchableOpacity>
-                    
-                    {/* QR Icon - White */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/qr-icon2.png')} style={styles.navIconImageWhite} />
-                    </TouchableOpacity>
-                    
-                    {/* Profile Icon - White */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/profile-icon2.png')} style={styles.navIconImageWhite} />
-                    </TouchableOpacity>
-                    
-                    {/* Documents Icon - White */}
-                    <TouchableOpacity style={styles.navIcon}>
-                        <Image source={require('../assets/docs-icon2.png')} style={styles.navIconImageWhite} />
-                    </TouchableOpacity>
+                {/* Third Row - Navigation */}
+                <View style={styles.thirdRow}>
+                    <View style={styles.navigationCard}>
+                        {/* Home Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={() => setActivePage('home')}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'home'
+                                        ? require('../assets/home-icon1.png')
+                                        : require('../assets/home-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* QR Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleQRPress}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'qr'
+                                        ? require('../assets/qr-icon1.png')
+                                        : require('../assets/qr-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Prescription Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handlePrescriptionsPress}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'prescription'
+                                        ? require('../assets/prescription-icon1.png')
+                                        : require('../assets/prescription-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'prescription' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Documents Icon */}
+                        <TouchableOpacity
+                            style={styles.navIcon}
+                            onPress={handleReportsPress}
+                        >
+                            <Image
+                                source={
+                                    activePage === 'documents'
+                                        ? require('../assets/docs-icon1.png')
+                                        : require('../assets/docs-icon2.png')
+                                }
+                                style={[
+                                    styles.navIconImage,
+                                    activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
+                                ]}
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </ScreenWrapper>
     );
 };
 
@@ -226,16 +302,18 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     profilePic: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: 60,
+        height: 60,
         marginRight: 15,
+        borderRadius: 60,
+        borderWidth: 2,
+        borderColor: '#2260FF',
     },
     welcomeText: {
         flex: 1,
     },
     welcomeBack: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: '400',
         color: '#2260FF',
         marginBottom: 2,
@@ -257,245 +335,194 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 10,
+        borderWidth: 1,
+        borderColor: 'black',
     },
     icon: {
         width: 20,
         height: 20,
         tintColor: 'black',
     },
-    secondHorizontalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    linksSection: {
-        flexDirection: 'row',
-        flex: 1,
-    },
-    linkItem: {
-        alignItems: 'center',
-        marginRight: 30,
-    },
-    linkIcon: {
-        width: 20,
-        height: 20,
-        marginBottom: 5,
-        tintColor: '#2260FF',
-    },
-    linkText: {
-        fontSize: 12,
-        color: '#2260FF',
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-    searchSection: {
-        justifyContent: 'flex-end',
-    },
-    searchBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#CAD6FF',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        height: 40,
-        width: 200,
-    },
-    searchIcon: {
-        width: 16,
-        height: 16,
-        marginRight: 8,
-        tintColor: '#2260FF',
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 12,
-        color: '#2260FF',
-    },
     divider: {
         height: 1,
         backgroundColor: '#2261ff72',
-        marginBottom: 15,
-    },
-    patientSummaryTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#2260FF',
-        textAlign: 'left',
+        marginBottom: 1,
     },
     secondRow: {
         backgroundColor: '#CAD6FF',
         padding: 20,
+        flex: 1,
+        paddingBottom: 5, // Reduced bottom padding to decrease gap
     },
     cardsContainer: {
-        marginBottom: 10,
-    },
-    patientNameCard: {
-        width: '100%',
-        height: 40,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        flexDirection: 'row',
+        marginBottom: 0, // Removed margin bottom
         alignItems: 'center',
-        paddingHorizontal: 20,
-        marginBottom: 10,
-        alignSelf: 'center',
     },
-    patientNameLabel: {
-        fontSize: 14,
+    patientCard: {
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 13,
+        padding: 10,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    patientTitle: {
+        fontSize: 18,
         fontWeight: '600',
         color: '#2260FF',
+        textAlign: 'center',
     },
-    patientNameValue: {
-        fontSize: 20,
+    addPrescriptionButton: {
+        width: '100%',
+        backgroundColor: '#2260FF',
+        borderRadius: 12,
+        padding: 10,
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    addPrescriptionText: {
+        fontSize: 16,
+        color: '#FFFFFF',
         fontWeight: '600',
-        color: 'black',
     },
-    twoColumns: {
+    twoColumnContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        width: '100%',
         marginBottom: 15,
-        gap: 15,
     },
     leftColumn: {
         flex: 1,
-        gap: 15,
+        marginRight: 4,
     },
     rightColumn: {
         flex: 1,
+        marginLeft: 4,
     },
-    bloodTypeCard: {
-        width: '100%',
-        height: 50,
+    smallCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
+        padding: 12,
+        alignItems: 'center',
+        marginBottom: 6,
+        minHeight: 40,
         justifyContent: 'center',
-        marginBottom: -4,
-        alignItems: 'center',
-        padding: 10,
     },
-    bloodTypeRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    bloodTypeLabel: {
-        fontSize: 14,
+    bloodTypeText: {
+        fontSize: 15,
         fontWeight: '600',
         color: '#2260FF',
         textAlign: 'center',
     },
-    bloodTypeValue: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: 'black',
-        textAlign: 'center',
+    allergiesCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 15,
+        flex: 1,
     },
     labReportsCard: {
-        width: '100%',
-        height: 232,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
-        justifyContent: 'space-between',
-    },
-    allergiesCard: {
-        width: '100%',
-        height: 170,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 15,
-        justifyContent: 'space-between',
+        flex: 1,
     },
     medicationCard: {
         width: '100%',
-        height: 168,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
-        justifyContent: 'space-between',
+        marginBottom: 6, // Reduced margin bottom to decrease gap
     },
-    cardTitleCenter: {
+    cardTitle: {
         fontSize: 14,
         fontWeight: '600',
         color: '#2260FF',
+        marginBottom: 10,
         textAlign: 'center',
-        marginBottom: 6,
     },
     cardDivider: {
         height: 1,
         backgroundColor: '#DDD',
-        marginBottom: 10,
+        width: '100%',
+        marginBottom: 15,
     },
-    reportItem: {
-        flexDirection: 'row',
-        marginBottom: 6,
+    allergiesList: {
+        marginBottom: 5,
+        flex: 1,
     },
     allergyItem: {
-        flexDirection: 'row',
-        marginBottom: 6,
+        marginBottom: 10,
+    },
+    allergyName: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: 'black',
+    },
+    allergySeverity: {
+        fontSize: 12,
+        color: '#666',
+        marginLeft: 10,
+    },
+    reportsList: {
+        marginBottom: 5,
+        flex: 1,
+    },
+    reportItem: {
+        marginBottom: 10,
+    },
+    reportName: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: 'black',
+    },
+    reportDetail: {
+        fontSize: 12,
+        color: '#666',
+        marginLeft: 10,
+    },
+    lastPrescription: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#000000ff',
+        marginBottom: 10,
+    },
+    medicationList: {
+        marginLeft: 10,
+        marginTop: -5,
+        marginBottom: 10,
     },
     medicationItem: {
-        flexDirection: 'row',
-        marginBottom: 4,
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 1,
+        fontWeight: '500',
     },
-    subMedication: {
-        flexDirection: 'row',
-        marginLeft: 12,
-        marginBottom: 3,
-    },
-    bullet: {
-        fontSize: 10,
-        color: '#2260FF',
-        marginRight: 6,
-        marginTop: 2,
-    },
-    subBullet: {
-        fontSize: 10,
-        color: '#2260FF',
-        marginRight: 6,
-    },
-    reportText: {
-        fontSize: 10,
-        color: '#070707',
-        flex: 1,
-        lineHeight: 14,
-    },
-    allergyText: {
-        fontSize: 10,
-        color: '#070707',
-        flex: 1,
-        lineHeight: 14,
-    },
-    medicationText: {
-        fontSize: 10,
-        color: '#070707',
-        lineHeight: 14,
-    },
-    subMedicationText: {
-        fontSize: 10,
-        color: '#070707',
-        lineHeight: 14,
-    },
-    buttonContainer: {
-        marginTop: 'auto',
-        paddingTop: 10,
-    },
-    viewMoreButton: {
+    viewButton: {
         backgroundColor: '#2260FF',
-        borderRadius: 6,
-        padding: 6,
-        alignItems: 'center',
-        width: '100%',
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 22,
+        alignSelf: 'center',
+        marginTop: 1,
     },
-    viewMoreText: {
-        fontSize: 10,
+    viewPrescriptionsButton: {
+        backgroundColor: '#2260FF',
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 60, // Increased width for prescriptions button only
+        alignSelf: 'center',
+        marginTop: 1,
+    },
+    viewButtonText: {
+        fontSize: 14,
         color: '#FFFFFF',
-        fontWeight: '600',
+        fontWeight: '500',
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',
-        padding: 15,
+        padding: 10, // Reduced padding to decrease gap
         alignItems: 'center',
+        paddingTop: 10, // Reduced top padding
     },
     navigationCard: {
         width: 298,
@@ -512,11 +539,11 @@ const styles = StyleSheet.create({
     navIconImage: {
         width: 24,
         height: 24,
+    },
+    activeIcon: {
         tintColor: 'black',
     },
-    navIconImageWhite: {
-        width: 24,
-        height: 24,
+    inactiveIcon: {
         tintColor: '#FFFFFF',
     },
 });
