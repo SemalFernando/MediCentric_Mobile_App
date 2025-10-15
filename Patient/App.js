@@ -3,6 +3,8 @@ import { View, Text } from 'react-native';
 import SplashScreen from './src/pages/SplashScreen';
 import WelcomeScreen from './src/pages/WelcomeScreen';
 import HomeScreen from './src/pages/HomeScreen';
+import ReportsScreen from './src/pages/ReportsScreen';
+import PrescriptionsScreen from './src/pages/PrescriptionsScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import ConsentScreen from './src/pages/ConsentScreen';
 
@@ -50,6 +52,24 @@ const App = () => {
     setCurrentScreen('welcome');
   };
 
+  // Navigate to reports screen
+  const navigateToReports = () => {
+    setCurrentScreen('reports');
+  };
+
+  const navigateBackFromReports = () => {
+    setCurrentScreen('home');
+  };
+
+  // Navigate to prescriptions screen
+  const navigateToPrescriptions = () => {
+    setCurrentScreen('prescriptions');
+  };
+
+  const navigateBackFromPrescriptions = () => {
+    setCurrentScreen('home');
+  };
+
   // Handle logout from home screen
   const handleLogout = () => {
     setScannedPatient(null);
@@ -65,13 +85,15 @@ const App = () => {
           onBack={navigateToWelcome}
           onLogout={handleLogout}
           patientData={scannedPatient}
+          onNavigateToReports={navigateToReports}
+          onNavigateToPrescriptions={navigateToPrescriptions}
         />
       );
     case 'setPassword':
       return (
-        <SetPasswordScreen 
-          onBack={navigateToWelcome} 
-          onSignup={navigateToConsent} 
+        <SetPasswordScreen
+          onBack={navigateToWelcome}
+          onSignup={navigateToConsent}
         />
       );
     case 'consent':
@@ -79,6 +101,22 @@ const App = () => {
         <ConsentScreen
           onCancel={navigateBackFromConsent}
           onAgree={navigateToHome}
+        />
+      );
+    case 'reports':
+      return (
+        <ReportsScreen
+          onBack={navigateBackFromReports}
+          onNavigateToHome={navigateToHome}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+        />
+      );
+    case 'prescriptions':
+      return (
+        <PrescriptionsScreen
+          onBack={navigateBackFromPrescriptions}
+          onNavigateToHome={navigateToHome}
+          onNavigateToReports={navigateToReports}
         />
       );
     case 'welcome':

@@ -99,19 +99,6 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                 {/* Second Row - CAD6FF Background */}
                 <View style={styles.secondRow}>
                     <View style={styles.cardsContainer}>
-                        {/* Patient Name Card */}
-                        <View style={styles.patientCard}>
-                            <Text style={styles.patientTitle}>Patient: Mr. Ryan Ravinathan</Text>
-                        </View>
-
-                        {/* Add New Prescription Button */}
-                        <TouchableOpacity
-                            style={styles.addPrescriptionButton}
-                            onPress={handleAddPrescriptionPress}
-                        >
-                            <Text style={styles.addPrescriptionText}>+ Add new prescription</Text>
-                        </TouchableOpacity>
-
                         {/* Two Column Layout */}
                         <View style={styles.twoColumnContainer}>
                             {/* Left Column */}
@@ -294,7 +281,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
-        marginTop: 20,
+        marginTop: 30,
     },
     profileSection: {
         flexDirection: 'row',
@@ -358,33 +345,6 @@ const styles = StyleSheet.create({
         marginBottom: 0, // Removed margin bottom
         alignItems: 'center',
     },
-    patientCard: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 13,
-        padding: 10,
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    patientTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#2260FF',
-        textAlign: 'center',
-    },
-    addPrescriptionButton: {
-        width: '100%',
-        backgroundColor: '#2260FF',
-        borderRadius: 12,
-        padding: 10,
-        alignItems: 'center',
-        marginBottom: 15,
-    },
-    addPrescriptionText: {
-        fontSize: 16,
-        color: '#FFFFFF',
-        fontWeight: '600',
-    },
     twoColumnContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -431,7 +391,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
-        marginBottom: 6, // Reduced margin bottom to decrease gap
+        marginBottom: 100, // Reduced margin bottom to decrease gap
     },
     cardTitle: {
         fontSize: 14,
@@ -522,7 +482,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         padding: 10, // Reduced padding to decrease gap
         alignItems: 'center',
-        paddingTop: 10, // Reduced top padding
+        paddingTop: 15, // Reduced top padding
     },
     navigationCard: {
         width: 298,
