@@ -1,44 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { View, Alert, PermissionsAndroid, Platform } from 'react-native';
-import QRCodeScanner from 'react-native-qrcode-scanner';
-import { RNCamera } from 'react-native-camera';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+import { CameraKitCameraScreen } from 'react-native-camera-kit';
+import { requestCameraPermission } from '../utils/permissions';
 
-const QRCodeScannerScreen = () => {
+export default function QRScannerScreen() {
   const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
-    const requestCameraPermission = async () => {
-      if (Platform.OS === 'android') {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.CAMERA,
-            {
-              title: 'Camera Permission',
-              message: 'App needs access to your camera to scan QR codes.',
-              buttonPositive: 'OK',
-            }
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            setHasPermission(true);
-          } else {
-            Alert.alert('Permission Denied', 'Camera access is required.');
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      }
-    };
-    requestCameraPermission();
+    requestCameraPermission().then((granted) => {
+      setHasPermission(granted);
+    });
   }, []);
 
-  if (!hasPermission) return null;
+  if (!hasPermission) {
+    return (
+      <View style={styles.center}>
+        <Text>Requesting camera permission...</Text>
+      </View>
+    );
+  }
 
   return (
-    <QRCodeScanner
-      onRead={({ data }) => Alert.alert('QR Code', data)}
-      flashMode={RNCamera.Constants.FlashMode.auto}
-    />
+    <View style={{ flex: 1 }}>
+      <CameraKitCameraScreen
+        scanBarcode={true}
+        onReadCode={(event) => Alert.alert('QR Code', event.nativeEvent.codeStringValue)}
+        showFrame={true}
+        laserColor={'red'}
+        frameColor={'white'}
+      />
+    </View>
   );
-};
+}
 
-export default QRCodeScannerScreen;
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

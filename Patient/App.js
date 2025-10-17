@@ -5,6 +5,7 @@ import WelcomeScreen from './src/pages/WelcomeScreen';
 import HomeScreen from './src/pages/HomeScreen';
 import ReportsScreen from './src/pages/ReportsScreen';
 import PrescriptionsScreen from './src/pages/PrescriptionsScreen';
+import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import ConsentScreen from './src/pages/ConsentScreen';
 
@@ -70,6 +71,15 @@ const App = () => {
     setCurrentScreen('home');
   };
 
+  // Navigate to allergies screen
+  const navigateToAllergies = () => {
+    setCurrentScreen('allergies');
+  };
+
+  const navigateBackFromAllergies = () => {
+    setCurrentScreen('home');
+  };
+
   // Handle logout from home screen
   const handleLogout = () => {
     setScannedPatient(null);
@@ -87,6 +97,7 @@ const App = () => {
           patientData={scannedPatient}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToAllergies={navigateToAllergies}
         />
       );
     case 'setPassword':
@@ -109,6 +120,7 @@ const App = () => {
           onBack={navigateBackFromReports}
           onNavigateToHome={navigateToHome}
           onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToAllergies={navigateToAllergies}
         />
       );
     case 'prescriptions':
@@ -117,6 +129,16 @@ const App = () => {
           onBack={navigateBackFromPrescriptions}
           onNavigateToHome={navigateToHome}
           onNavigateToReports={navigateToReports}
+          onNavigateToAllergies={navigateToAllergies}
+        />
+      );
+    case 'allergies':
+      return (
+        <AllergiesScreen
+          onBack={navigateBackFromAllergies}
+          onNavigateToHome={navigateToHome}
+          onNavigateToReports={navigateToReports}
+          onNavigateToPrescriptions={navigateToPrescriptions}
         />
       );
     case 'welcome':
