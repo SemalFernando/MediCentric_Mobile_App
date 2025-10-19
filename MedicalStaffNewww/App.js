@@ -9,6 +9,7 @@ import PrescriptionsScreen from './src/pages/PrescriptionsScreen';
 import PrescriptionFormScreen from './src/pages/PrescriptionFormScreen';
 import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
+import QRCodeScannerScreen from './src/pages/QrScannerScreen';
 import ProfileScreen from './src/pages/ProfileScreen';
 import LabReportFormScreen from './src/pages/LabReportFormScreen';
 import ScanReportFormScreen from './src/pages/ScanReportFormScreen';
@@ -47,6 +48,10 @@ const App = () => {
 
   const navigateToLogin = () => {
     setCurrentScreen('welcome');
+  };
+
+  const navigateToQRScanner = () => {
+    setCurrentScreen('qrScanner');
   };
 
   const navigateBackFromQR = () => {
@@ -142,12 +147,14 @@ const App = () => {
       return (
         <InitialHomeScreen
           onBack={navigateToWelcome}
+          onNavigateToQRScanner={navigateToQRScanner}
         />
       );
     case 'home':
       return (
         <HomeScreen
           onBack={navigateBackToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
@@ -161,6 +168,7 @@ const App = () => {
         <ReportsScreen
           onBack={navigateBackFromReports}
           onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
         />
@@ -170,6 +178,7 @@ const App = () => {
         <PrescriptionsScreen
           onBack={navigateBackFromPrescriptions}
           onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToAllergies={navigateToAllergies}
           onNavigateToPrescriptionForm={navigateToPrescriptionForm}
@@ -180,6 +189,7 @@ const App = () => {
         <AllergiesScreen
           onBack={navigateBackFromAllergies}
           onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
         />
@@ -189,6 +199,7 @@ const App = () => {
         <PrescriptionFormScreen
           onBack={navigateBackFromPrescriptionForm}
           onNavigateToHome={navigateToHome}
+          onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
@@ -210,6 +221,16 @@ const App = () => {
       );
     case 'setPassword':
       return <SetPasswordScreen onBack={navigateToWelcome} onLogin={navigateToLogin} />;
+    case 'qrScanner':
+      return (
+        <QRCodeScannerScreen
+          onBack={navigateBackFromQR}
+          onPatientScanned={navigateToPatientHome}
+          onNavigateToHome={navigateToHome}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToReports={navigateToReports}
+        />
+      );
     case 'profile':
       return (
         <ProfileScreen
