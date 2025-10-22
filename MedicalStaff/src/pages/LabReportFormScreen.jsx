@@ -1,8 +1,9 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, Modal, Platform } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
+import DocumentPicker from 'react-native-document-picker';
 
-// Memoized Custom Date Picker Component (same as prescription screen)
+// Memoized Custom Date Picker Component
 const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }) => {
   const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
 
@@ -177,16 +178,19 @@ const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }
 const LabReportFormScreen = ({ onBack }) => {
     const [reportDate, setReportDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [reportStatus, setReportStatus] = useState('');
-    const [reportResult, setReportResult] = useState('');
-    const [reportType, setReportType] = useState('');
-    const [reportDescription, setReportDescription] = useState('');
-    const [uploadedDoc, setUploadedDoc] = useState('');
+    const [status, setStatus] = useState('COMPLETED');
+    const [labReportResults, setLabReportResults] = useState('');
+    const [labReportType, setLabReportType] = useState('');
+    const [labReportDescription, setLabReportDescription] = useState('');
+    const [uploadedFile, setUploadedFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [tempDate, setTempDate] = useState('');
     const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
+    const [category, setCategory] = useState('ROUTINE');
+    const [nurseId, setNurseId] = useState('N001');
+    const [comments, setComments] = useState('');
 
-    const baseUrl = 'http://10.87.143.247:8080';
+    const baseUrl = 'http://10.185.72.247:8082';
     const patientId = 'P123';
 
     // Format date for display
@@ -198,6 +202,14 @@ const LabReportFormScreen = ({ onBack }) => {
             year: 'numeric'
         });
     }, []);
+
+    // Set current date when component loads
+    useEffect(() => {
+        const currentDate = new Date();
+        setReportDate(currentDate);
+        setTempDate(formatDate(currentDate));
+        setSelectedDateForPicker(currentDate);
+    }, [formatDate]);
 
     // Parse date from MM/DD/YYYY format
     const parseDate = useCallback((dateString) => {
@@ -277,25 +289,87 @@ const LabReportFormScreen = ({ onBack }) => {
         showCustomDatePicker();
     }, [showCustomDatePicker]);
 
-    // Handle document upload (simulated)
-    const handleDocumentUpload = useCallback(() => {
-        // In a real app, this would open document picker
-        Alert.alert('Upload Document', 'Document upload functionality would be implemented here');
-        setUploadedDoc('document.pdf'); // Simulate uploaded document
+    // Handle real document upload
+    const handleDocumentUpload = useCallback(async () => {
+        try {
+            const res = await DocumentPicker.pick({
+                type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
+                allowMultiSelection: false,
+            });
+            
+            const file = res[0];
+            setUploadedFile({
+                uri: file.uri,
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+            
+            Alert.alert('Success', `File "${file.name}" selected successfully`);
+            
+        } catch (err) {
+            if (DocumentPicker.isCancel(err)) {
+                console.log('User cancelled document picker');
+            } else {
+                console.log('Document picker error:', err);
+                Alert.alert('Error', 'Failed to pick document. Please try again.');
+            }
+        }
     }, []);
+
+    // Remove uploaded file
+    const handleRemoveFile = useCallback(() => {
+        setUploadedFile(null);
+    }, []);
+
+    // Create form data for API call - EXACTLY matching Postman
+    const createFormData = () => {
+        const formData = new FormData();
+        
+        // Add scan report data as JSON - EXACT field names from Postman
+        const scanReportData = {
+            nurseId: nurseId,
+            labReportType: labReportType.trim(),
+            labReportDescription: labReportDescription.trim(),
+            category: category,
+            labReportResults: labReportResults.trim(),
+            comments: comments.trim(),
+            status: status
+        };
+        
+        console.log('Sending JSON data:', scanReportData);
+        
+        formData.append('scanReport', JSON.stringify(scanReportData));
+        
+        // Add file if exists - EXACT field name 'file' from Postman
+        if (uploadedFile) {
+            formData.append('file', {
+                uri: uploadedFile.uri,
+                type: uploadedFile.type || 'application/pdf',
+                name: uploadedFile.name
+            });
+            console.log('Attaching file:', uploadedFile.name);
+        }
+        
+        return formData;
+    };
 
     // Handle adding lab report
     const handleAddLabReport = async () => {
-        if (!reportStatus.trim()) {
+        if (!status.trim()) {
             Alert.alert('Error', 'Please enter report status');
             return;
         }
-        if (!reportResult.trim()) {
-            Alert.alert('Error', 'Please enter report result');
+        if (!labReportResults.trim()) {
+            Alert.alert('Error', 'Please enter report results');
             return;
         }
-        if (!reportType.trim()) {
+        if (!labReportType.trim()) {
             Alert.alert('Error', 'Please enter report type');
+            return;
+        }
+        if (!nurseId.trim()) {
+            Alert.alert('Error', 'Please enter nurse ID');
             return;
         }
 
@@ -322,41 +396,61 @@ const LabReportFormScreen = ({ onBack }) => {
         try {
             setLoading(true);
             
-            const labReportData = {
-                patientId: patientId,
-                reportDate: finalReportDate.toISOString().split('T')[0],
-                status: reportStatus.trim(),
-                result: reportResult.trim(),
-                type: reportType.trim(),
-                description: reportDescription.trim(),
-                document: uploadedDoc || null
-            };
+            const formData = createFormData();
 
-            console.log('Sending lab report data:', labReportData);
+            console.log('Sending request to:', `${baseUrl}/patients/${patientId}/lab-reports`);
 
-            // Simulate API call
-            // const response = await fetch(`${baseUrl}/patients/${patientId}/lab-reports`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify(labReportData),
-            // });
+            const response = await fetch(`${baseUrl}/patients/${patientId}/lab-reports`, {
+                method: 'POST',
+                // Let React Native set the Content-Type automatically with boundary
+                headers: {
+                    // No Content-Type header for FormData
+                },
+                body: formData,
+            });
 
-            // Simulate success
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                let errorText;
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    errorText = 'Could not read error response';
+                }
+                console.error('Server response error:', errorText);
+                
+                // Try to parse as JSON for better error message
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(errorJson)}`);
+                } catch (parseError) {
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+            }
+
+            const result = await response.json();
+            console.log('Lab report added successfully:', result);
 
             Alert.alert('Success', 'Lab report added successfully!', [
-                { text: 'OK', onPress: () => {
-                    setReportStatus('');
-                    setReportResult('');
-                    setReportType('');
-                    setReportDescription('');
-                    setUploadedDoc('');
-                    setReportDate(new Date());
-                    setTempDate('');
-                    if (onBack) onBack();
-                }}
+                { 
+                    text: 'OK', 
+                    onPress: () => {
+                        // Reset form but keep current date
+                        const newCurrentDate = new Date();
+                        setStatus('COMPLETED');
+                        setLabReportResults('');
+                        setLabReportType('');
+                        setLabReportDescription('');
+                        setComments('');
+                        setUploadedFile(null);
+                        setReportDate(newCurrentDate);
+                        setTempDate(formatDate(newCurrentDate));
+                        setCategory('ROUTINE');
+                        setNurseId('N001');
+                        if (onBack) onBack();
+                    }
+                }
             ]);
 
         } catch (error) {
@@ -386,70 +480,25 @@ const LabReportFormScreen = ({ onBack }) => {
 
                 {/* Form Fields */}
                 <View style={styles.formContainer}>
-                    {/* Report Status Field */}
-                    <Text style={styles.inputLabel}>Report Status</Text>
+                    {/* Nurse ID Field */}
+                    <Text style={styles.inputLabel}>Nurse ID *</Text>
                     <View style={styles.inputContainer}>
                         <Image
-                            source={require('../assets/status-icon.png')}
+                            source={require('../assets/nurse-icon.png')}
                             style={styles.inputIcon}
                             resizeMode="contain"
                         />
                         <TextInput
                             style={styles.input}
-                            value={reportStatus}
-                            placeholder="Enter report status (e.g., Completed, Pending)"
+                            value={nurseId}
+                            placeholder="Enter nurse ID"
                             placeholderTextColor="#809CFF"
-                            onChangeText={setReportStatus}
+                            onChangeText={setNurseId}
                         />
                     </View>
 
-                    {/* Report Date Field */}
-                    <Text style={styles.inputLabel}>Report Date</Text>
-                    <View style={styles.inputContainer}>
-                        <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
-                            <Image
-                                source={require('../assets/calendar-icon.png')}
-                                style={styles.inputIcon}
-                                resizeMode="contain"
-                            />
-                        </TouchableOpacity>
-                        <TextInput
-                            style={styles.input}
-                            value={tempDate}
-                            placeholder="MM/DD/YYYY"
-                            placeholderTextColor="#809CFF"
-                            onChangeText={handleDateInput}
-                            keyboardType="numeric"
-                            maxLength={10}
-                        />
-                        <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
-                            <Image
-                                source={require('../assets/drop-down.png')}
-                                style={styles.dropdownIcon}
-                                resizeMode="contain"
-                            />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Report Result Field */}
-                    <Text style={styles.inputLabel}>Report Result</Text>
-                    <View style={styles.inputContainer}>
-                        <Image
-                            source={require('../assets/result-icon.png')}
-                            style={styles.inputIcon}
-                            resizeMode="contain"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            value={reportResult}
-                            placeholder="Enter report result"
-                            placeholderTextColor="#809CFF"
-                            onChangeText={setReportResult}
-                        />
-                    </View>
-
-                    {/* Report Type Field */}
-                    <Text style={styles.inputLabel}>Report Type</Text>
+                    {/* Lab Report Type Field */}
+                    <Text style={styles.inputLabel}>Lab Report Type *</Text>
                     <View style={styles.inputContainer}>
                         <Image
                             source={require('../assets/type-icon.png')}
@@ -458,30 +507,96 @@ const LabReportFormScreen = ({ onBack }) => {
                         />
                         <TextInput
                             style={styles.input}
-                            value={reportType}
-                            placeholder="Enter report type (e.g., Blood Test, Urine Analysis)"
+                            value={labReportType}
+                            placeholder="Enter lab report type (e.g., Blood Test, Urine Analysis)"
                             placeholderTextColor="#809CFF"
-                            onChangeText={setReportType}
+                            onChangeText={setLabReportType}
                         />
                     </View>
 
-                    {/* Report Description Field */}
-                    <Text style={styles.inputLabel}>Report Description</Text>
+                    {/* Category Field */}
+                    <Text style={styles.inputLabel}>Category</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/category-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={category}
+                            placeholder="Enter category (e.g., ROUTINE, SCREENING)"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setCategory}
+                        />
+                    </View>
+
+                    {/* Status Field */}
+                    <Text style={styles.inputLabel}>Status *</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/status-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={status}
+                            placeholder="Enter status (e.g., COMPLETED, PENDING)"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setStatus}
+                        />
+                    </View>
+
+                    {/* Lab Report Results Field */}
+                    <Text style={styles.inputLabel}>Lab Report Results *</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/result-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={labReportResults}
+                            placeholder="Enter lab report results"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setLabReportResults}
+                        />
+                    </View>
+
+                    {/* Lab Report Description Field */}
+                    <Text style={styles.inputLabel}>Lab Report Description</Text>
                     <View style={[styles.inputContainer, styles.textAreaContainer]}>
                         <TextInput
                             style={[styles.input, styles.textArea]}
-                            placeholder="Enter detailed report description and findings..."
+                            placeholder="Enter detailed lab report description..."
                             placeholderTextColor="#809CFF"
-                            value={reportDescription}
-                            onChangeText={setReportDescription}
+                            value={labReportDescription}
+                            onChangeText={setLabReportDescription}
                             multiline={true}
                             numberOfLines={4}
                             textAlignVertical="top"
                         />
                     </View>
 
+                    {/* Comments Field */}
+                    <Text style={styles.inputLabel}>Comments</Text>
+                    <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                        <TextInput
+                            style={[styles.input, styles.textArea]}
+                            placeholder="Enter comments..."
+                            placeholderTextColor="#809CFF"
+                            value={comments}
+                            onChangeText={setComments}
+                            multiline={true}
+                            numberOfLines={3}
+                            textAlignVertical="top"
+                        />
+                    </View>
+
                     {/* Upload Report Document Field */}
-                    <Text style={styles.inputLabel}>Upload Report Document</Text>
+                    <Text style={styles.inputLabel}>Upload Report Document (Optional)</Text>
                     <TouchableOpacity style={styles.uploadContainer} onPress={handleDocumentUpload}>
                         <Image
                             source={require('../assets/upload-icon.png')}
@@ -489,9 +604,22 @@ const LabReportFormScreen = ({ onBack }) => {
                             resizeMode="contain"
                         />
                         <Text style={styles.uploadText}>
-                            {uploadedDoc ? uploadedDoc : 'Tap to upload document'}
+                            {uploadedFile ? uploadedFile.name : 'Tap to upload document (PDF/Image)'}
                         </Text>
                     </TouchableOpacity>
+
+                    {/* Show selected file with remove option */}
+                    {uploadedFile && (
+                        <View style={styles.fileInfoContainer}>
+                            <Text style={styles.fileName}>{uploadedFile.name}</Text>
+                            <Text style={styles.fileSize}>
+                                {Math.round(uploadedFile.size / 1024)} KB
+                            </Text>
+                            <TouchableOpacity style={styles.removeButton} onPress={handleRemoveFile}>
+                                <Text style={styles.removeButtonText}>Remove</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     {/* Add Lab Report Button */}
                     <TouchableOpacity
@@ -612,7 +740,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ECF1FF',
         borderRadius: 10,
-        marginBottom: 20,
+        marginBottom: 10,
         paddingHorizontal: 15,
         height: 50,
         backgroundColor: '#ECF1FF',
@@ -627,6 +755,40 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: '#809CFF',
+    },
+    fileInfoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: '#2260FF',
+        borderRadius: 10,
+        marginBottom: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        backgroundColor: '#F0F5FF',
+    },
+    fileName: {
+        flex: 1,
+        fontSize: 14,
+        color: '#2260FF',
+        fontWeight: '500',
+    },
+    fileSize: {
+        fontSize: 12,
+        color: '#809CFF',
+        marginRight: 10,
+    },
+    removeButton: {
+        backgroundColor: '#FF6B6B',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 5,
+    },
+    removeButtonText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '500',
     },
     addButton: {
         backgroundColor: '#2260FF',
