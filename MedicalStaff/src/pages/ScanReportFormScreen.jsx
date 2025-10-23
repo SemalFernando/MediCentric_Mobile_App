@@ -1,290 +1,59 @@
-import React, { useState, useCallback, memo } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, Modal, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
-
-// Memoized Custom Date Picker Component (same as previous screens)
-const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }) => {
-  const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
-
-  React.useEffect(() => {
-    setLocalSelectedDate(selectedDate);
-  }, [selectedDate]);
-
-  const getDaysInMonth = (year, month) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const currentYear = localSelectedDate.getFullYear();
-  const currentMonth = localSelectedDate.getMonth();
-  const currentDay = localSelectedDate.getDate();
-  
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
-  const days = Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => i + 1);
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const handleMonthSelect = (monthIndex) => {
-    const newDate = new Date(localSelectedDate);
-    newDate.setMonth(monthIndex);
-    const daysInNewMonth = getDaysInMonth(newDate.getFullYear(), monthIndex);
-    if (newDate.getDate() > daysInNewMonth) {
-      newDate.setDate(daysInNewMonth);
-    }
-    setLocalSelectedDate(newDate);
-  };
-
-  const handleDaySelect = (day) => {
-    const newDate = new Date(localSelectedDate);
-    newDate.setDate(day);
-    setLocalSelectedDate(newDate);
-  };
-
-  const handleYearSelect = (year) => {
-    const newDate = new Date(localSelectedDate);
-    newDate.setFullYear(year);
-    const daysInNewMonth = getDaysInMonth(year, newDate.getMonth());
-    if (newDate.getDate() > daysInNewMonth) {
-      newDate.setDate(daysInNewMonth);
-    }
-    setLocalSelectedDate(newDate);
-  };
-
-  const handleConfirm = () => {
-    onDateSelect(localSelectedDate);
-  };
-
-  const handleCancel = () => {
-    setLocalSelectedDate(selectedDate);
-    onCancel();
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.datePickerContainer}>
-          <Text style={styles.datePickerTitle}>Select Scan Date</Text>
-          
-          <View style={styles.pickerRow}>
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Month</Text>
-              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                {months.map((month, index) => (
-                  <TouchableOpacity
-                    key={month}
-                    style={[
-                      styles.pickerItem,
-                      currentMonth === index && styles.selectedPickerItem
-                    ]}
-                    onPress={() => handleMonthSelect(index)}
-                  >
-                    <Text style={[
-                      styles.pickerItemText,
-                      currentMonth === index && styles.selectedPickerItemText
-                    ]}>
-                      {month}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Day</Text>
-              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                {days.map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.pickerItem,
-                      currentDay === day && styles.selectedPickerItem
-                    ]}
-                    onPress={() => handleDaySelect(day)}
-                  >
-                    <Text style={[
-                      styles.pickerItemText,
-                      currentDay === day && styles.selectedPickerItemText
-                    ]}>
-                      {day}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Year</Text>
-              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                {years.map((year) => (
-                  <TouchableOpacity
-                    key={year}
-                    style={[
-                      styles.pickerItem,
-                      currentYear === year && styles.selectedPickerItem
-                    ]}
-                    onPress={() => handleYearSelect(year)}
-                  >
-                    <Text style={[
-                      styles.pickerItemText,
-                      currentYear === year && styles.selectedPickerItemText
-                    ]}>
-                      {year}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-
-          <Text style={styles.selectedDateText}>
-            Selected: {formatDate(localSelectedDate)}
-          </Text>
-
-          <View style={styles.datePickerButtons}>
-            <TouchableOpacity
-              style={[styles.datePickerButton, styles.cancelButton]}
-              onPress={handleCancel}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.datePickerButton, styles.confirmButton]}
-              onPress={handleConfirm}
-            >
-              <Text style={styles.confirmButtonText}>Select Date</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-});
+import DocumentPicker from 'react-native-document-picker';
 
 const ScanReportFormScreen = ({ onBack }) => {
-    const [scanDate, setScanDate] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const [scanStatus, setScanStatus] = useState('');
     const [scanResult, setScanResult] = useState('');
     const [scanType, setScanType] = useState('');
     const [scanDescription, setScanDescription] = useState('');
-    const [uploadedDoc, setUploadedDoc] = useState('');
+    const [uploadedFile, setUploadedFile] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [tempDate, setTempDate] = useState('');
-    const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
+    const [radiologistId, setRadiologistId] = useState('R001');
+    const [category, setCategory] = useState('');
+    const [comments, setComments] = useState('');
 
-    const baseUrl = 'http://10.87.143.247:8080';
+    const baseUrl = 'http://10.185.72.247:8080';
     const patientId = 'P123';
 
-    // Format date for display
-    const formatDate = useCallback((date) => {
-        if (!date) return '';
-        return date.toLocaleDateString('en-US', {
-            month: '2-digit',
-            day: '2-digit',
-            year: 'numeric'
-        });
-    }, []);
+    // Handle document upload with DocumentPicker - WORKING VERSION
+    const handleDocumentUpload = useCallback(async () => {
+        try {
+            console.log('🚀 Starting document picker...');
 
-    // Parse date from MM/DD/YYYY format
-    const parseDate = useCallback((dateString) => {
-        if (!dateString || dateString.length !== 10) return null;
-        const parts = dateString.split('/');
-        if (parts.length !== 3) return null;
-        
-        const [month, day, year] = parts;
-        const monthNum = parseInt(month, 10);
-        const dayNum = parseInt(day, 10);
-        const yearNum = parseInt(year, 10);
-        
-        if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31 || yearNum < 1900) {
-            return null;
-        }
-        
-        const parsedDate = new Date(yearNum, monthNum - 1, dayNum);
-        if (isNaN(parsedDate.getTime()) || 
-            parsedDate.getMonth() !== monthNum - 1 || 
-            parsedDate.getDate() !== dayNum) {
-            return null;
-        }
-        
-        return parsedDate;
-    }, []);
+            // Use pickSingle for single file selection (returns string URI)
+            const fileUri = await DocumentPicker.pickSingle({
+                type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
+            });
 
-    // Handle manual date input
-    const handleDateInput = useCallback((text) => {
-        const cleaned = text.replace(/[^0-9/]/g, '');
-        
-        let formatted = cleaned;
-        if (cleaned.length >= 2 && cleaned.length <= 3 && !cleaned.includes('/')) {
-            formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-        } else if (cleaned.length >= 5 && cleaned.length <= 6) {
-            formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4);
-        }
-        
-        setTempDate(formatted);
-        
-        if (formatted.length === 10) {
-            try {
-                const parsedDate = parseDate(formatted);
-                if (parsedDate && !isNaN(parsedDate.getTime())) {
-                    setScanDate(parsedDate);
-                } else {
-                    setScanDate(null);
-                }
-            } catch (error) {
-                console.log('Invalid date');
-                setScanDate(null);
+            console.log('✅ File selected:', fileUri);
+
+            // Extract filename from URI
+            const uriParts = fileUri.split('/');
+            let fileName = uriParts[uriParts.length - 1];
+            fileName = decodeURIComponent(fileName);
+
+            const fileInfo = {
+                uri: fileUri,
+                name: fileName,
+                type: 'application/octet-stream' // Default type
+            };
+
+            setUploadedFile(fileInfo);
+            Alert.alert('Success', `File "${fileName}" selected successfully!`);
+
+        } catch (err) {
+            if (DocumentPicker.isCancel(err)) {
+                console.log("User cancelled the upload");
+            } else {
+                console.log('Document picker error:', err);
+                Alert.alert('Error', 'Failed to select document. Please try again.');
             }
-        } else {
-            setScanDate(null);
         }
-    }, [parseDate]);
-
-    // Show custom date picker
-    const showCustomDatePicker = useCallback(() => {
-        setSelectedDateForPicker(scanDate || new Date());
-        setShowDatePicker(true);
-    }, [scanDate]);
-
-    // Handle date selection from custom picker
-    const handleDateSelect = useCallback((date) => {
-        setScanDate(date);
-        setTempDate(formatDate(date));
-        setShowDatePicker(false);
-    }, [formatDate]);
-
-    // Handle cancel date picker
-    const handleCancelDatePicker = useCallback(() => {
-        setShowDatePicker(false);
     }, []);
 
-    // Handle icon press for date picker
-    const handleIconPress = useCallback(() => {
-        showCustomDatePicker();
-    }, [showCustomDatePicker]);
-
-    // Handle document upload (simulated)
-    const handleDocumentUpload = useCallback(() => {
-        // In a real app, this would open document picker
-        Alert.alert('Upload Scan Document', 'Scan document upload functionality would be implemented here');
-        setUploadedDoc('scan_report.pdf'); // Simulate uploaded document
-    }, []);
-
-    // Handle adding scan report
+    // Handle adding scan report with proper file upload - WORKING VERSION
     const handleAddScanReport = async () => {
         if (!scanStatus.trim()) {
             Alert.alert('Error', 'Please enter scan status');
@@ -298,73 +67,154 @@ const ScanReportFormScreen = ({ onBack }) => {
             Alert.alert('Error', 'Please enter scan type');
             return;
         }
-
-        let finalScanDate = scanDate;
-        
-        if (!scanDate && tempDate && tempDate.length === 10) {
-            try {
-                finalScanDate = parseDate(tempDate);
-                if (!finalScanDate || isNaN(finalScanDate.getTime())) {
-                    Alert.alert('Error', 'Please enter a valid scan date');
-                    return;
-                }
-            } catch (error) {
-                Alert.alert('Error', 'Please enter a valid scan date');
-                return;
-            }
-        }
-
-        if (!finalScanDate || isNaN(finalScanDate.getTime())) {
-            Alert.alert('Error', 'Please select a valid scan date');
+        if (!radiologistId.trim()) {
+            Alert.alert('Error', 'Please enter radiologist ID');
             return;
         }
 
         try {
             setLoading(true);
-            
+            console.log('🚀 Starting scan report submission...');
+
+            // Create the scan report JSON object as per your API
             const scanReportData = {
-                patientId: patientId,
-                scanDate: finalScanDate.toISOString().split('T')[0],
-                status: scanStatus.trim(),
-                result: scanResult.trim(),
-                type: scanType.trim(),
-                description: scanDescription.trim(),
-                document: uploadedDoc || null
+                radiologistId: radiologistId.trim(),
+                scanType: scanType.trim(),
+                scanDescription: scanDescription.trim(),
+                category: category.trim() || 'GENERAL',
+                scanResults: scanResult.trim(),
+                comments: comments.trim(),
+                status: scanStatus.trim().toUpperCase()
             };
 
-            console.log('Sending scan report data:', scanReportData);
+            console.log('📄 Scan report data:', scanReportData);
+            console.log('📁 Selected file:', uploadedFile);
 
-            // Simulate API call
-            // const response = await fetch(`${baseUrl}/patients/${patientId}/scan-reports`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify(scanReportData),
-            // });
+            // Create form data for multipart/form-data
+            const formData = new FormData();
 
-            // Simulate success
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Add the scan report as JSON string
+            formData.append('scanReport', JSON.stringify(scanReportData));
 
-            Alert.alert('Success', 'Scan report added successfully!', [
-                { text: 'OK', onPress: () => {
-                    setScanStatus('');
-                    setScanResult('');
-                    setScanType('');
-                    setScanDescription('');
-                    setUploadedDoc('');
-                    setScanDate(new Date());
-                    setTempDate('');
-                    if (onBack) onBack();
-                }}
-            ]);
+            // Add file if uploaded - WORKING FILE HANDLING
+            if (uploadedFile) {
+                console.log('📤 Adding file to formData:', uploadedFile);
+
+                // Determine MIME type based on file extension
+                const fileExtension = uploadedFile.name.split('.').pop()?.toLowerCase();
+                let mimeType = 'application/octet-stream';
+
+                if (fileExtension === 'pdf') {
+                    mimeType = 'application/pdf';
+                } else if (['jpg', 'jpeg'].includes(fileExtension)) {
+                    mimeType = 'image/jpeg';
+                } else if (fileExtension === 'png') {
+                    mimeType = 'image/png';
+                } else if (fileExtension === 'gif') {
+                    mimeType = 'image/gif';
+                }
+
+                const file = {
+                    uri: uploadedFile.uri,
+                    type: mimeType,
+                    name: uploadedFile.name,
+                };
+
+                formData.append('file', file);
+                console.log('✅ File added to formData with MIME type:', mimeType);
+            } else {
+                console.log('ℹ️ No file selected, uploading without file');
+            }
+
+            const url = `${baseUrl}/patients/${patientId}/scan-reports`;
+            console.log('🌐 Making request to:', url);
+
+            // Make API call
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    // Let React Native set Content-Type automatically for FormData
+                },
+                body: formData,
+            });
+
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
+
+            // Check if the request was successful
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✅ Scan report submitted successfully:', result);
+
+                Alert.alert(
+                    'Scan Report Submitted',
+                    `Your scan report has been successfully submitted.${result.fileUrl ? '\n\nThe attached file has been uploaded to Google Drive.' : ''
+                    }`,
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                // Reset form
+                                setScanStatus('');
+                                setScanResult('');
+                                setScanType('');
+                                setScanDescription('');
+                                setUploadedFile(null);
+                                setRadiologistId('R001');
+                                setCategory('');
+                                setComments('');
+                                if (onBack) onBack();
+                            }
+                        }
+                    ]
+                );
+            } else {
+                // Handle server errors (4xx, 5xx)
+                let errorMessage = `Server error: ${response.status}`;
+                try {
+                    const errorText = await response.text();
+                    if (errorText) {
+                        errorMessage = errorText;
+                    }
+                } catch (e) {
+                    console.log('❌ Could not read error response body');
+                }
+                throw new Error(errorMessage);
+            }
 
         } catch (error) {
-            console.error('Error adding scan report:', error);
-            Alert.alert('Error', `Failed to add scan report: ${error.message}`);
+            console.error('🚨 Error adding scan report:', error);
+            console.error('🚨 Error message:', error.message);
+
+            // Check the specific error type
+            if (error.message.includes('Network request failed') ||
+                error.message.includes('Failed to connect to') ||
+                error.message.includes('ECONNREFUSED')) {
+
+                Alert.alert(
+                    'Network Error',
+                    `Cannot connect to the server at ${baseUrl}. Please check:\n\n• Your server is running\n• Your device and server are on the same network\n• No firewall is blocking the connection`
+                );
+            } else if (error.message.includes('timeout') || error.message.includes('TIMEDOUT')) {
+                Alert.alert(
+                    'Timeout',
+                    'The request took too long. Please try again.'
+                );
+            } else {
+                Alert.alert(
+                    'Error',
+                    `Failed to add scan report: ${error.message}`
+                );
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    // Remove uploaded file
+    const handleRemoveFile = () => {
+        setUploadedFile(null);
+        Alert.alert('File Removed', 'Selected file has been removed.');
     };
 
     return (
@@ -386,8 +236,25 @@ const ScanReportFormScreen = ({ onBack }) => {
 
                 {/* Form Fields */}
                 <View style={styles.formContainer}>
+                    {/* Radiologist ID Field */}
+                    <Text style={styles.inputLabel}>Radiologist ID *</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/radiologist-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={radiologistId}
+                            placeholder="Enter radiologist ID (e.g., R001)"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setRadiologistId}
+                        />
+                    </View>
+
                     {/* Scan Status Field */}
-                    <Text style={styles.inputLabel}>Scan Status</Text>
+                    <Text style={styles.inputLabel}>Scan Status *</Text>
                     <View style={styles.inputContainer}>
                         <Image
                             source={require('../assets/status-icon.png')}
@@ -397,59 +264,14 @@ const ScanReportFormScreen = ({ onBack }) => {
                         <TextInput
                             style={styles.input}
                             value={scanStatus}
-                            placeholder="Enter scan status (e.g., Completed, Pending)"
+                            placeholder="Enter scan status (e.g., COMPLETED, PENDING)"
                             placeholderTextColor="#809CFF"
                             onChangeText={setScanStatus}
                         />
                     </View>
 
-                    {/* Scan Date Field */}
-                    <Text style={styles.inputLabel}>Scan Date</Text>
-                    <View style={styles.inputContainer}>
-                        <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
-                            <Image
-                                source={require('../assets/calendar-icon.png')}
-                                style={styles.inputIcon}
-                                resizeMode="contain"
-                            />
-                        </TouchableOpacity>
-                        <TextInput
-                            style={styles.input}
-                            value={tempDate}
-                            placeholder="MM/DD/YYYY"
-                            placeholderTextColor="#809CFF"
-                            onChangeText={handleDateInput}
-                            keyboardType="numeric"
-                            maxLength={10}
-                        />
-                        <TouchableOpacity onPress={handleIconPress} style={styles.iconButton}>
-                            <Image
-                                source={require('../assets/drop-down.png')}
-                                style={styles.dropdownIcon}
-                                resizeMode="contain"
-                            />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Scan Result Field */}
-                    <Text style={styles.inputLabel}>Scan Result</Text>
-                    <View style={styles.inputContainer}>
-                        <Image
-                            source={require('../assets/result-icon.png')}
-                            style={styles.inputIcon}
-                            resizeMode="contain"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            value={scanResult}
-                            placeholder="Enter scan result"
-                            placeholderTextColor="#809CFF"
-                            onChangeText={setScanResult}
-                        />
-                    </View>
-
                     {/* Scan Type Field */}
-                    <Text style={styles.inputLabel}>Scan Type</Text>
+                    <Text style={styles.inputLabel}>Scan Type *</Text>
                     <View style={styles.inputContainer}>
                         <Image
                             source={require('../assets/scan-icon.png')}
@@ -465,12 +287,46 @@ const ScanReportFormScreen = ({ onBack }) => {
                         />
                     </View>
 
+                    {/* Category Field */}
+                    <Text style={styles.inputLabel}>Category</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/category-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={category}
+                            placeholder="Enter category (e.g., NEURO, CHEST, CARDIAC)"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setCategory}
+                        />
+                    </View>
+
+                    {/* Scan Result Field */}
+                    <Text style={styles.inputLabel}>Scan Results *</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/result-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={scanResult}
+                            placeholder="Enter scan results"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setScanResult}
+                        />
+                    </View>
+
                     {/* Scan Description Field */}
                     <Text style={styles.inputLabel}>Scan Description</Text>
                     <View style={[styles.inputContainer, styles.textAreaContainer]}>
                         <TextInput
                             style={[styles.input, styles.textArea]}
-                            placeholder="Enter detailed scan description and findings..."
+                            placeholder="Enter detailed scan description..."
                             placeholderTextColor="#809CFF"
                             value={scanDescription}
                             onChangeText={setScanDescription}
@@ -480,18 +336,48 @@ const ScanReportFormScreen = ({ onBack }) => {
                         />
                     </View>
 
+                    {/* Comments Field */}
+                    <Text style={styles.inputLabel}>Comments</Text>
+                    <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                        <TextInput
+                            style={[styles.input, styles.textArea]}
+                            placeholder="Enter additional comments..."
+                            placeholderTextColor="#809CFF"
+                            value={comments}
+                            onChangeText={setComments}
+                            multiline={true}
+                            numberOfLines={3}
+                            textAlignVertical="top"
+                        />
+                    </View>
+
                     {/* Upload Scan Document Field */}
                     <Text style={styles.inputLabel}>Upload Scan Document</Text>
-                    <TouchableOpacity style={styles.uploadContainer} onPress={handleDocumentUpload}>
+                    <TouchableOpacity
+                        style={styles.uploadContainer}
+                        onPress={handleDocumentUpload}
+                        disabled={loading}
+                    >
                         <Image
                             source={require('../assets/upload-icon.png')}
                             style={styles.uploadIcon}
                             resizeMode="contain"
                         />
                         <Text style={styles.uploadText}>
-                            {uploadedDoc ? uploadedDoc : 'Tap to upload scan document'}
+                            {uploadedFile ? uploadedFile.name : 'Tap to upload scan document (PDF or Images)'}
                         </Text>
                     </TouchableOpacity>
+
+                    {/* Remove file button if file is selected */}
+                    {uploadedFile && (
+                        <TouchableOpacity
+                            style={styles.removeFileButton}
+                            onPress={handleRemoveFile}
+                            disabled={loading}
+                        >
+                            <Text style={styles.removeFileText}>Remove Selected File</Text>
+                        </TouchableOpacity>
+                    )}
 
                     {/* Add Scan Report Button */}
                     <TouchableOpacity
@@ -499,19 +385,21 @@ const ScanReportFormScreen = ({ onBack }) => {
                         onPress={handleAddScanReport}
                         disabled={loading}
                     >
-                        <Text style={styles.addButtonText}>
-                            {loading ? 'Adding...' : 'Add Scan Report'}
-                        </Text>
+                        {loading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                            <Text style={styles.addButtonText}>Add Scan Report</Text>
+                        )}
                     </TouchableOpacity>
-                </View>
 
-                {/* Custom Date Picker Modal */}
-                <CustomDatePicker
-                    visible={showDatePicker}
-                    selectedDate={selectedDateForPicker}
-                    onDateSelect={handleDateSelect}
-                    onCancel={handleCancelDatePicker}
-                />
+                    {/* Loading indicator */}
+                    {loading && (
+                        <View style={styles.loadingOverlay}>
+                            <ActivityIndicator size="large" color="#2260FF" />
+                            <Text style={styles.loadingText}>Uploading scan report...</Text>
+                        </View>
+                    )}
+                </View>
             </ScrollView>
         </ScreenWrapper>
     );
@@ -586,15 +474,6 @@ const styles = StyleSheet.create({
         marginRight: 10,
         tintColor: '#809CFF',
     },
-    dropdownIcon: {
-        width: 20,
-        height: 20,
-        tintColor: '#809CFF',
-        marginLeft: 10,
-    },
-    iconButton: {
-        padding: 5,
-    },
     input: {
         flex: 1,
         height: '100%',
@@ -612,7 +491,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ECF1FF',
         borderRadius: 10,
-        marginBottom: 20,
+        marginBottom: 10,
         paddingHorizontal: 15,
         height: 50,
         backgroundColor: '#ECF1FF',
@@ -627,6 +506,23 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: '#809CFF',
+    },
+    removeFileButton: {
+        backgroundColor: '#FFECF0',
+        borderWidth: 1,
+        borderColor: '#FF2260',
+        borderRadius: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        marginBottom: 20,
+        alignItems: 'center',
+        alignSelf: 'center',
+        width: '80%',
+    },
+    removeFileText: {
+        color: '#FF2260',
+        fontSize: 16,
+        fontWeight: '600',
     },
     addButton: {
         backgroundColor: '#2260FF',
@@ -647,99 +543,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
-    // Date Picker Styles
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
+    loadingOverlay: {
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        marginTop: 10,
     },
-    datePickerContainer: {
-        backgroundColor: 'white',
-        borderRadius: 15,
-        padding: 20,
-        width: '90%',
-        maxHeight: '80%',
-    },
-    datePickerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 20,
+    loadingText: {
+        marginTop: 10,
         color: '#2260FF',
-    },
-    pickerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    pickerContainer: {
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    pickerLabel: {
         fontSize: 14,
-        fontWeight: '600',
-        textAlign: 'center',
-        marginBottom: 5,
-        color: '#2260FF',
-    },
-    pickerScroll: {
-        height: 150,
-        borderWidth: 1,
-        borderColor: '#ECF1FF',
-        borderRadius: 8,
-    },
-    pickerItem: {
-        paddingVertical: 8,
-        paddingHorizontal: 5,
-        alignItems: 'center',
-    },
-    selectedPickerItem: {
-        backgroundColor: '#2260FF',
-        borderRadius: 5,
-    },
-    pickerItemText: {
-        fontSize: 14,
-        color: '#666',
-    },
-    selectedPickerItemText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    selectedDateText: {
-        textAlign: 'center',
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 20,
-        color: '#2260FF',
-    },
-    datePickerButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    datePickerButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginHorizontal: 5,
-    },
-    cancelButton: {
-        backgroundColor: '#F5F5F5',
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-    },
-    confirmButton: {
-        backgroundColor: '#2260FF',
-    },
-    cancelButtonText: {
-        color: '#666',
-        fontWeight: '600',
-    },
-    confirmButtonText: {
-        color: 'white',
-        fontWeight: '600',
     },
 });
 
