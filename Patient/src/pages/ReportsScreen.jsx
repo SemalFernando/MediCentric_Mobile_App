@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
+import MedBot from '../components/MedBot';
 
 const ReportsScreen = ({ 
     onBack, 
     onNavigateToHome, 
     onNavigateToQRScanner, 
     onNavigateToPrescriptions,
-    onNavigateToAllergies 
+    onNavigateToAllergies,
+    onNavigateToDiagnose 
 }) => {
     const [activePage, setActivePage] = useState('documents');
     const [selectedReport, setSelectedReport] = useState(null);
@@ -37,6 +39,12 @@ const ReportsScreen = ({
         setActivePage('allergies');
         if (onNavigateToAllergies) {
             onNavigateToAllergies();
+        }
+    };
+
+    const handleDiagnosePress = () => {
+        if (onNavigateToDiagnose) {
+            onNavigateToDiagnose();
         }
     };
 
@@ -277,6 +285,9 @@ const ReportsScreen = ({
                     </View>
                 </View>
             </ScrollView>
+
+            {/* MedBot Floating Button */}
+            <MedBot onDiagnosePress={handleDiagnosePress} />
         </ScreenWrapper>
     );
 };
