@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     },
     reportsList: {
         paddingHorizontal: 20,
-        marginBottom: -2,
+        marginBottom: 20,
     },
     reportItem: {
         flexDirection: 'row',

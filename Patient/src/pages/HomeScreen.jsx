@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
+import MedBot from '../components/MedBot';
 
-const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile }) => {
+const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile, onNavigateToDiagnose }) => {
     const [activePage, setActivePage] = useState('home'); // Track the active page
 
     const handleQRPress = () => {
@@ -42,6 +43,12 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     const handleProfilePress = () => {
         if (onNavigateToProfile) {
             onNavigateToProfile();
+        }
+    };
+
+    const handleDiagnosePress = () => {
+        if (onNavigateToDiagnose) {
+            onNavigateToDiagnose();
         }
     };
 
@@ -263,6 +270,9 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                     </View>
                 </View>
             </ScrollView>
+
+            {/* MedBot Floating Button */}
+            <MedBot onDiagnosePress={handleDiagnosePress} />
         </ScreenWrapper>
     );
 };
@@ -339,7 +349,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#CAD6FF',
         padding: 20,
         flex: 1,
-        paddingBottom: 5, // Reduced bottom padding to decrease gap
+        paddingBottom: 40, // Reduced bottom padding to decrease gap
     },
     cardsContainer: {
         marginBottom: 0, // Removed margin bottom

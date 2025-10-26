@@ -1,371 +1,117 @@
-import React, { useState, useCallback, memo, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, Modal, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import DocumentPicker from 'react-native-document-picker';
 
-// Memoized Custom Date Picker Component
-const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }) => {
-  const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
-
-  React.useEffect(() => {
-    setLocalSelectedDate(selectedDate);
-  }, [selectedDate]);
-
-  const getDaysInMonth = (year, month) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const currentYear = localSelectedDate.getFullYear();
-  const currentMonth = localSelectedDate.getMonth();
-  const currentDay = localSelectedDate.getDate();
-  
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
-  const days = Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => i + 1);
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const handleMonthSelect = (monthIndex) => {
-    const newDate = new Date(localSelectedDate);
-    newDate.setMonth(monthIndex);
-    const daysInNewMonth = getDaysInMonth(newDate.getFullYear(), monthIndex);
-    if (newDate.getDate() > daysInNewMonth) {
-      newDate.setDate(daysInNewMonth);
-    }
-    setLocalSelectedDate(newDate);
-  };
-
-  const handleDaySelect = (day) => {
-    const newDate = new Date(localSelectedDate);
-    newDate.setDate(day);
-    setLocalSelectedDate(newDate);
-  };
-
-  const handleYearSelect = (year) => {
-    const newDate = new Date(localSelectedDate);
-    newDate.setFullYear(year);
-    const daysInNewMonth = getDaysInMonth(year, newDate.getMonth());
-    if (newDate.getDate() > daysInNewMonth) {
-      newDate.setDate(daysInNewMonth);
-    }
-    setLocalSelectedDate(newDate);
-  };
-
-  const handleConfirm = () => {
-    onDateSelect(localSelectedDate);
-  };
-
-  const handleCancel = () => {
-    setLocalSelectedDate(selectedDate);
-    onCancel();
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.datePickerContainer}>
-          <Text style={styles.datePickerTitle}>Select Report Date</Text>
-          
-          <View style={styles.pickerRow}>
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Month</Text>
-              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                {months.map((month, index) => (
-                  <TouchableOpacity
-                    key={month}
-                    style={[
-                      styles.pickerItem,
-                      currentMonth === index && styles.selectedPickerItem
-                    ]}
-                    onPress={() => handleMonthSelect(index)}
-                  >
-                    <Text style={[
-                      styles.pickerItemText,
-                      currentMonth === index && styles.selectedPickerItemText
-                    ]}>
-                      {month}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Day</Text>
-              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                {days.map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.pickerItem,
-                      currentDay === day && styles.selectedPickerItem
-                    ]}
-                    onPress={() => handleDaySelect(day)}
-                  >
-                    <Text style={[
-                      styles.pickerItemText,
-                      currentDay === day && styles.selectedPickerItemText
-                    ]}>
-                      {day}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Year</Text>
-              <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                {years.map((year) => (
-                  <TouchableOpacity
-                    key={year}
-                    style={[
-                      styles.pickerItem,
-                      currentYear === year && styles.selectedPickerItem
-                    ]}
-                    onPress={() => handleYearSelect(year)}
-                  >
-                    <Text style={[
-                      styles.pickerItemText,
-                      currentYear === year && styles.selectedPickerItemText
-                    ]}>
-                      {year}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-
-          <Text style={styles.selectedDateText}>
-            Selected: {formatDate(localSelectedDate)}
-          </Text>
-
-          <View style={styles.datePickerButtons}>
-            <TouchableOpacity
-              style={[styles.datePickerButton, styles.cancelButton]}
-              onPress={handleCancel}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.datePickerButton, styles.confirmButton]}
-              onPress={handleConfirm}
-            >
-              <Text style={styles.confirmButtonText}>Select Date</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-});
-
 const LabReportFormScreen = ({ onBack }) => {
-    const [reportDate, setReportDate] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [status, setStatus] = useState('COMPLETED');
+    const [status, setStatus] = useState('');
     const [labReportResults, setLabReportResults] = useState('');
     const [labReportType, setLabReportType] = useState('');
     const [labReportDescription, setLabReportDescription] = useState('');
     const [uploadedFile, setUploadedFile] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [tempDate, setTempDate] = useState('');
-    const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
-    const [category, setCategory] = useState('ROUTINE');
     const [nurseId, setNurseId] = useState('N001');
+    const [category, setCategory] = useState('');
     const [comments, setComments] = useState('');
 
-    const baseUrl = 'http://10.185.72.247:8082';
-    const patientId = 'P123';
+    const baseUrl = 'http://10.185.72.247:8083';
+    const patientId = 'P1234';
 
-    // Format date for display
-    const formatDate = useCallback((date) => {
-        if (!date) return '';
-        return date.toLocaleDateString('en-US', {
-            month: '2-digit',
-            day: '2-digit',
-            year: 'numeric'
-        });
-    }, []);
-
-    // Set current date when component loads
-    useEffect(() => {
-        const currentDate = new Date();
-        setReportDate(currentDate);
-        setTempDate(formatDate(currentDate));
-        setSelectedDateForPicker(currentDate);
-    }, [formatDate]);
-
-    // Parse date from MM/DD/YYYY format
-    const parseDate = useCallback((dateString) => {
-        if (!dateString || dateString.length !== 10) return null;
-        const parts = dateString.split('/');
-        if (parts.length !== 3) return null;
-        
-        const [month, day, year] = parts;
-        const monthNum = parseInt(month, 10);
-        const dayNum = parseInt(day, 10);
-        const yearNum = parseInt(year, 10);
-        
-        if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31 || yearNum < 1900) {
-            return null;
-        }
-        
-        const parsedDate = new Date(yearNum, monthNum - 1, dayNum);
-        if (isNaN(parsedDate.getTime()) || 
-            parsedDate.getMonth() !== monthNum - 1 || 
-            parsedDate.getDate() !== dayNum) {
-            return null;
-        }
-        
-        return parsedDate;
-    }, []);
-
-    // Handle manual date input
-    const handleDateInput = useCallback((text) => {
-        const cleaned = text.replace(/[^0-9/]/g, '');
-        
-        let formatted = cleaned;
-        if (cleaned.length >= 2 && cleaned.length <= 3 && !cleaned.includes('/')) {
-            formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-        } else if (cleaned.length >= 5 && cleaned.length <= 6) {
-            formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4);
-        }
-        
-        setTempDate(formatted);
-        
-        if (formatted.length === 10) {
-            try {
-                const parsedDate = parseDate(formatted);
-                if (parsedDate && !isNaN(parsedDate.getTime())) {
-                    setReportDate(parsedDate);
-                } else {
-                    setReportDate(null);
-                }
-            } catch (error) {
-                console.log('Invalid date');
-                setReportDate(null);
-            }
-        } else {
-            setReportDate(null);
-        }
-    }, [parseDate]);
-
-    // Show custom date picker
-    const showCustomDatePicker = useCallback(() => {
-        setSelectedDateForPicker(reportDate || new Date());
-        setShowDatePicker(true);
-    }, [reportDate]);
-
-    // Handle date selection from custom picker
-    const handleDateSelect = useCallback((date) => {
-        setReportDate(date);
-        setTempDate(formatDate(date));
-        setShowDatePicker(false);
-    }, [formatDate]);
-
-    // Handle cancel date picker
-    const handleCancelDatePicker = useCallback(() => {
-        setShowDatePicker(false);
-    }, []);
-
-    // Handle icon press for date picker
-    const handleIconPress = useCallback(() => {
-        showCustomDatePicker();
-    }, [showCustomDatePicker]);
-
-    // Handle real document upload
+    // Handle document upload with DocumentPicker - FIXED VERSION FOR OLDER API
     const handleDocumentUpload = useCallback(async () => {
         try {
-            const res = await DocumentPicker.pick({
+            console.log('🚀 Starting document picker...');
+
+            // Use pickSingle - older versions return just the URI string
+            const result = await DocumentPicker.pickSingle({
                 type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
-                allowMultiSelection: false,
             });
-            
-            const file = res[0];
-            setUploadedFile({
-                uri: file.uri,
-                name: file.name,
-                type: file.type,
-                size: file.size
-            });
-            
-            Alert.alert('Success', `File "${file.name}" selected successfully`);
-            
+
+            console.log('✅ Raw file result:', JSON.stringify(result, null, 2));
+            console.log('✅ Result type:', typeof result);
+
+            // Handle different return types (older vs newer API)
+            let fileUri, fileName, fileType, fileSize;
+
+            if (typeof result === 'string') {
+                // Older API - returns just URI string
+                fileUri = result;
+                
+                // Extract filename from URI
+                const uriParts = fileUri.split('/');
+                const lastPart = decodeURIComponent(uriParts[uriParts.length - 1]);
+                
+                // Try to extract actual filename or generate one
+                if (lastPart.includes(':')) {
+                    // Content URI format like "image:1000056278"
+                    const contentId = lastPart.split(':')[1];
+                    
+                    // Check if it's an image from media store
+                    if (fileUri.includes('image')) {
+                        fileName = `image_${contentId}.jpg`;
+                        fileType = 'image/jpeg';
+                    } else if (fileUri.includes('document')) {
+                        fileName = `document_${contentId}.pdf`;
+                        fileType = 'application/pdf';
+                    } else {
+                        fileName = `file_${contentId}`;
+                        fileType = 'application/octet-stream';
+                    }
+                } else {
+                    fileName = lastPart;
+                    // Try to detect type from filename
+                    const ext = fileName.split('.').pop()?.toLowerCase();
+                    if (ext === 'pdf') {
+                        fileType = 'application/pdf';
+                    } else if (['jpg', 'jpeg'].includes(ext)) {
+                        fileType = 'image/jpeg';
+                    } else if (ext === 'png') {
+                        fileType = 'image/png';
+                    } else {
+                        fileType = 'image/jpeg'; // Default to image
+                    }
+                }
+            } else {
+                // Newer API - returns object
+                fileUri = result.fileCopyUri || result.uri;
+                fileName = result.name || 'unknown_file';
+                fileType = result.type || 'application/octet-stream';
+                fileSize = result.size;
+            }
+
+            const fileInfo = {
+                uri: fileUri,
+                name: fileName,
+                type: fileType,
+                size: fileSize
+            };
+
+            console.log('📁 File info prepared:', fileInfo);
+            setUploadedFile(fileInfo);
+            Alert.alert('Success', `File "${fileName}" selected successfully!`);
+
         } catch (err) {
             if (DocumentPicker.isCancel(err)) {
-                console.log('User cancelled document picker');
+                console.log("User cancelled the upload");
             } else {
                 console.log('Document picker error:', err);
-                Alert.alert('Error', 'Failed to pick document. Please try again.');
+                Alert.alert('Error', 'Failed to select document. Please try again.');
             }
         }
     }, []);
 
-    // Remove uploaded file
-    const handleRemoveFile = useCallback(() => {
-        setUploadedFile(null);
-    }, []);
-
-    // Create form data for API call - EXACTLY matching Postman
-    const createFormData = () => {
-        const formData = new FormData();
-        
-        // Add scan report data as JSON - EXACT field names from Postman
-        const scanReportData = {
-            nurseId: nurseId,
-            labReportType: labReportType.trim(),
-            labReportDescription: labReportDescription.trim(),
-            category: category,
-            labReportResults: labReportResults.trim(),
-            comments: comments.trim(),
-            status: status
-        };
-        
-        console.log('Sending JSON data:', scanReportData);
-        
-        formData.append('scanReport', JSON.stringify(scanReportData));
-        
-        // Add file if exists - EXACT field name 'file' from Postman
-        if (uploadedFile) {
-            formData.append('file', {
-                uri: uploadedFile.uri,
-                type: uploadedFile.type || 'application/pdf',
-                name: uploadedFile.name
-            });
-            console.log('Attaching file:', uploadedFile.name);
-        }
-        
-        return formData;
-    };
-
-    // Handle adding lab report
+    // Handle adding lab report with proper file upload - FIXED VERSION
     const handleAddLabReport = async () => {
         if (!status.trim()) {
-            Alert.alert('Error', 'Please enter report status');
+            Alert.alert('Error', 'Please enter lab report status');
             return;
         }
         if (!labReportResults.trim()) {
-            Alert.alert('Error', 'Please enter report results');
+            Alert.alert('Error', 'Please enter lab report results');
             return;
         }
         if (!labReportType.trim()) {
-            Alert.alert('Error', 'Please enter report type');
+            Alert.alert('Error', 'Please enter lab report type');
             return;
         }
         if (!nurseId.trim()) {
@@ -373,92 +119,173 @@ const LabReportFormScreen = ({ onBack }) => {
             return;
         }
 
-        let finalReportDate = reportDate;
-        
-        if (!reportDate && tempDate && tempDate.length === 10) {
-            try {
-                finalReportDate = parseDate(tempDate);
-                if (!finalReportDate || isNaN(finalReportDate.getTime())) {
-                    Alert.alert('Error', 'Please enter a valid report date');
-                    return;
-                }
-            } catch (error) {
-                Alert.alert('Error', 'Please enter a valid report date');
-                return;
-            }
-        }
-
-        if (!finalReportDate || isNaN(finalReportDate.getTime())) {
-            Alert.alert('Error', 'Please select a valid report date');
-            return;
-        }
-
         try {
             setLoading(true);
-            
-            const formData = createFormData();
+            console.log('🚀 Starting lab report submission...');
 
-            console.log('Sending request to:', `${baseUrl}/patients/${patientId}/lab-reports`);
+            // Create the lab report JSON object as per your API
+            const labReportData = {
+                nurseId: nurseId.trim(),
+                labReportType: labReportType.trim(),
+                labReportDescription: labReportDescription.trim(),
+                category: category.trim() || 'ROUTINE',
+                labReportResults: labReportResults.trim(),
+                comments: comments.trim(),
+                status: status.trim().toUpperCase()
+            };
 
-            const response = await fetch(`${baseUrl}/patients/${patientId}/lab-reports`, {
-                method: 'POST',
-                // Let React Native set the Content-Type automatically with boundary
-                headers: {
-                    // No Content-Type header for FormData
-                },
-                body: formData,
-            });
+            console.log('📄 Lab report data:', labReportData);
+            console.log('📁 Selected file:', uploadedFile);
 
-            console.log('Response status:', response.status);
+            // Create form data for multipart/form-data
+            const formData = new FormData();
 
-            if (!response.ok) {
-                let errorText;
-                try {
-                    errorText = await response.text();
-                } catch (e) {
-                    errorText = 'Could not read error response';
-                }
-                console.error('Server response error:', errorText);
+            // Add the lab report as JSON string
+            formData.append('scanReport', JSON.stringify(labReportData));
+
+            // Add file if uploaded - FIXED FILE HANDLING
+            if (uploadedFile && uploadedFile.name && uploadedFile.uri) {
+                console.log('📤 Adding file to formData:', uploadedFile);
+
+                // Determine MIME type based on file type or extension
+                let mimeType = uploadedFile.type;
                 
-                // Try to parse as JSON for better error message
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(errorJson)}`);
-                } catch (parseError) {
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                // If type is generic or missing, infer from file extension
+                if (!mimeType || mimeType === 'application/octet-stream') {
+                    const fileExtension = uploadedFile.name.split('.').pop()?.toLowerCase();
+                    
+                    if (fileExtension === 'pdf') {
+                        mimeType = 'application/pdf';
+                    } else if (['jpg', 'jpeg'].includes(fileExtension)) {
+                        mimeType = 'image/jpeg';
+                    } else if (fileExtension === 'png') {
+                        mimeType = 'image/png';
+                    } else if (fileExtension === 'gif') {
+                        mimeType = 'image/gif';
+                    } else {
+                        // Default to image/jpeg for unknown image types
+                        mimeType = 'image/jpeg';
+                    }
+                }
+
+                console.log('📝 Determined MIME type:', mimeType);
+
+                // Create proper file object for FormData
+                const file = {
+                    uri: uploadedFile.uri,
+                    type: mimeType,
+                    name: uploadedFile.name,
+                };
+
+                formData.append('file', file);
+                console.log('✅ File added to formData:', file);
+            } else {
+                console.log('ℹ️ No valid file selected, uploading without file');
+                if (uploadedFile) {
+                    console.log('⚠️ File is missing required properties:', uploadedFile);
                 }
             }
 
-            const result = await response.json();
-            console.log('Lab report added successfully:', result);
+            const url = `${baseUrl}/patients/${patientId}/lab-reports`;
+            console.log('🌐 Making request to:', url);
 
-            Alert.alert('Success', 'Lab report added successfully!', [
-                { 
-                    text: 'OK', 
-                    onPress: () => {
-                        // Reset form but keep current date
-                        const newCurrentDate = new Date();
-                        setStatus('COMPLETED');
-                        setLabReportResults('');
-                        setLabReportType('');
-                        setLabReportDescription('');
-                        setComments('');
-                        setUploadedFile(null);
-                        setReportDate(newCurrentDate);
-                        setTempDate(formatDate(newCurrentDate));
-                        setCategory('ROUTINE');
-                        setNurseId('N001');
-                        if (onBack) onBack();
+            // Make API call with proper headers
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    // Let FormData set Content-Type with boundary automatically
+                    'Accept': 'application/json',
+                },
+            });
+
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
+
+            // Check if the request was successful
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✅ Lab report submitted successfully:', result);
+
+                Alert.alert(
+                    'Lab Report Submitted',
+                    'Your lab report has been successfully submitted.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                // Reset form
+                                setStatus('');
+                                setLabReportResults('');
+                                setLabReportType('');
+                                setLabReportDescription('');
+                                setUploadedFile(null);
+                                setNurseId('N001');
+                                setCategory('');
+                                setComments('');
+                                if (onBack) onBack();
+                            }
+                        }
+                    ]
+                );
+            } else {
+                // Handle server errors (4xx, 5xx)
+                let errorMessage = `Server error: ${response.status}`;
+                try {
+                    const errorText = await response.text();
+                    console.log('❌ Error response:', errorText);
+                    if (errorText) {
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMessage = errorJson.message || errorJson.error || errorMessage;
+                        } catch (e) {
+                            errorMessage = errorText || errorMessage;
+                        }
                     }
+                } catch (e) {
+                    console.log('❌ Could not read error response body');
                 }
-            ]);
+                throw new Error(errorMessage);
+            }
 
         } catch (error) {
-            console.error('Error adding lab report:', error);
-            Alert.alert('Error', `Failed to add lab report: ${error.message}`);
+            console.error('🚨 Error adding lab report:', error);
+            console.error('🚨 Error message:', error.message);
+
+            // Check the specific error type
+            if (error.message.includes('Network request failed') ||
+                error.message.includes('Failed to connect to') ||
+                error.message.includes('ECONNREFUSED')) {
+
+                Alert.alert(
+                    'Network Error',
+                    `Cannot connect to the server at ${baseUrl}. Please check:\n\n• Your server is running\n• Your device and server are on the same network\n• No firewall is blocking the connection`
+                );
+            } else if (error.message.includes('timeout') || error.message.includes('TIMEDOUT')) {
+                Alert.alert(
+                    'Timeout',
+                    'The request took too long. Please try again.'
+                );
+            } else if (error.message.includes('415') || error.message.includes('Unsupported Media Type')) {
+                Alert.alert(
+                    'Server Configuration Error',
+                    'The server rejected the file format. Please check:\n\n• Backend accepts multipart/form-data\n• File field name is "file"\n• Accepted file types match (PDF, JPEG, PNG)\n\nError details: ' + error.message
+                );
+            } else {
+                Alert.alert(
+                    'Error',
+                    `Failed to add lab report: ${error.message}`
+                );
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    // Remove uploaded file
+    const handleRemoveFile = () => {
+        setUploadedFile(null);
+        Alert.alert('File Removed', 'Selected file has been removed.');
     };
 
     return (
@@ -491,9 +318,26 @@ const LabReportFormScreen = ({ onBack }) => {
                         <TextInput
                             style={styles.input}
                             value={nurseId}
-                            placeholder="Enter nurse ID"
+                            placeholder="Enter nurse ID (e.g., N001)"
                             placeholderTextColor="#809CFF"
                             onChangeText={setNurseId}
+                        />
+                    </View>
+
+                    {/* Status Field */}
+                    <Text style={styles.inputLabel}>Status *</Text>
+                    <View style={styles.inputContainer}>
+                        <Image
+                            source={require('../assets/status-icon.png')}
+                            style={styles.inputIcon}
+                            resizeMode="contain"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={status}
+                            placeholder="Enter status (e.g., COMPLETED, PENDING)"
+                            placeholderTextColor="#809CFF"
+                            onChangeText={setStatus}
                         />
                     </View>
 
@@ -501,14 +345,14 @@ const LabReportFormScreen = ({ onBack }) => {
                     <Text style={styles.inputLabel}>Lab Report Type *</Text>
                     <View style={styles.inputContainer}>
                         <Image
-                            source={require('../assets/type-icon.png')}
+                            source={require('../assets/lab-icon.png')}
                             style={styles.inputIcon}
                             resizeMode="contain"
                         />
                         <TextInput
                             style={styles.input}
                             value={labReportType}
-                            placeholder="Enter lab report type (e.g., Blood Test, Urine Analysis)"
+                            placeholder="Enter lab report type (e.g., Blood Test, Urinalysis)"
                             placeholderTextColor="#809CFF"
                             onChangeText={setLabReportType}
                         />
@@ -531,25 +375,8 @@ const LabReportFormScreen = ({ onBack }) => {
                         />
                     </View>
 
-                    {/* Status Field */}
-                    <Text style={styles.inputLabel}>Status *</Text>
-                    <View style={styles.inputContainer}>
-                        <Image
-                            source={require('../assets/status-icon.png')}
-                            style={styles.inputIcon}
-                            resizeMode="contain"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            value={status}
-                            placeholder="Enter status (e.g., COMPLETED, PENDING)"
-                            placeholderTextColor="#809CFF"
-                            onChangeText={setStatus}
-                        />
-                    </View>
-
                     {/* Lab Report Results Field */}
-                    <Text style={styles.inputLabel}>Lab Report Results *</Text>
+                    <Text style={styles.inputLabel}>Lab Results *</Text>
                     <View style={styles.inputContainer}>
                         <Image
                             source={require('../assets/result-icon.png')}
@@ -559,7 +386,7 @@ const LabReportFormScreen = ({ onBack }) => {
                         <TextInput
                             style={styles.input}
                             value={labReportResults}
-                            placeholder="Enter lab report results"
+                            placeholder="Enter lab results"
                             placeholderTextColor="#809CFF"
                             onChangeText={setLabReportResults}
                         />
@@ -585,7 +412,7 @@ const LabReportFormScreen = ({ onBack }) => {
                     <View style={[styles.inputContainer, styles.textAreaContainer]}>
                         <TextInput
                             style={[styles.input, styles.textArea]}
-                            placeholder="Enter comments..."
+                            placeholder="Enter additional comments..."
                             placeholderTextColor="#809CFF"
                             value={comments}
                             onChangeText={setComments}
@@ -595,30 +422,45 @@ const LabReportFormScreen = ({ onBack }) => {
                         />
                     </View>
 
-                    {/* Upload Report Document Field */}
-                    <Text style={styles.inputLabel}>Upload Report Document (Optional)</Text>
-                    <TouchableOpacity style={styles.uploadContainer} onPress={handleDocumentUpload}>
+                    {/* Upload Lab Document Field */}
+                    <Text style={styles.inputLabel}>Upload Lab Document</Text>
+                    <TouchableOpacity
+                        style={styles.uploadContainer}
+                        onPress={handleDocumentUpload}
+                        disabled={loading}
+                    >
                         <Image
                             source={require('../assets/upload-icon.png')}
                             style={styles.uploadIcon}
                             resizeMode="contain"
                         />
                         <Text style={styles.uploadText}>
-                            {uploadedFile ? uploadedFile.name : 'Tap to upload document (PDF/Image)'}
+                            {uploadedFile ? uploadedFile.name : 'Tap to upload lab document (PDF or Images)'}
                         </Text>
                     </TouchableOpacity>
 
-                    {/* Show selected file with remove option */}
+                    {/* Show file details if selected */}
                     {uploadedFile && (
                         <View style={styles.fileInfoContainer}>
-                            <Text style={styles.fileName}>{uploadedFile.name}</Text>
-                            <Text style={styles.fileSize}>
-                                {Math.round(uploadedFile.size / 1024)} KB
-                            </Text>
-                            <TouchableOpacity style={styles.removeButton} onPress={handleRemoveFile}>
-                                <Text style={styles.removeButtonText}>Remove</Text>
-                            </TouchableOpacity>
+                            <Text style={styles.fileInfoText}>File: {uploadedFile.name}</Text>
+                            <Text style={styles.fileInfoText}>Type: {uploadedFile.type}</Text>
+                            {uploadedFile.size && (
+                                <Text style={styles.fileInfoText}>
+                                    Size: {(uploadedFile.size / 1024).toFixed(2)} KB
+                                </Text>
+                            )}
                         </View>
+                    )}
+
+                    {/* Remove file button if file is selected */}
+                    {uploadedFile && (
+                        <TouchableOpacity
+                            style={styles.removeFileButton}
+                            onPress={handleRemoveFile}
+                            disabled={loading}
+                        >
+                            <Text style={styles.removeFileText}>Remove Selected File</Text>
+                        </TouchableOpacity>
                     )}
 
                     {/* Add Lab Report Button */}
@@ -627,19 +469,21 @@ const LabReportFormScreen = ({ onBack }) => {
                         onPress={handleAddLabReport}
                         disabled={loading}
                     >
-                        <Text style={styles.addButtonText}>
-                            {loading ? 'Adding...' : 'Add Lab Report'}
-                        </Text>
+                        {loading ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                            <Text style={styles.addButtonText}>Add Lab Report</Text>
+                        )}
                     </TouchableOpacity>
-                </View>
 
-                {/* Custom Date Picker Modal */}
-                <CustomDatePicker
-                    visible={showDatePicker}
-                    selectedDate={selectedDateForPicker}
-                    onDateSelect={handleDateSelect}
-                    onCancel={handleCancelDatePicker}
-                />
+                    {/* Loading indicator */}
+                    {loading && (
+                        <View style={styles.loadingOverlay}>
+                            <ActivityIndicator size="large" color="#2260FF" />
+                            <Text style={styles.loadingText}>Uploading lab report...</Text>
+                        </View>
+                    )}
+                </View>
             </ScrollView>
         </ScreenWrapper>
     );
@@ -714,15 +558,6 @@ const styles = StyleSheet.create({
         marginRight: 10,
         tintColor: '#809CFF',
     },
-    dropdownIcon: {
-        width: 20,
-        height: 20,
-        tintColor: '#809CFF',
-        marginLeft: 10,
-    },
-    iconButton: {
-        padding: 5,
-    },
     input: {
         flex: 1,
         height: '100%',
@@ -757,45 +592,39 @@ const styles = StyleSheet.create({
         color: '#809CFF',
     },
     fileInfoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: '#2260FF',
+        backgroundColor: '#F0F4FF',
         borderRadius: 10,
-        marginBottom: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        backgroundColor: '#F0F5FF',
+        padding: 12,
+        marginBottom: 10,
     },
-    fileName: {
-        flex: 1,
+    fileInfoText: {
         fontSize: 14,
         color: '#2260FF',
-        fontWeight: '500',
+        marginBottom: 4,
     },
-    fileSize: {
-        fontSize: 12,
-        color: '#809CFF',
-        marginRight: 10,
+    removeFileButton: {
+        backgroundColor: '#FFECF0',
+        borderWidth: 1,
+        borderColor: '#FF2260',
+        borderRadius: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        marginBottom: 20,
+        alignItems: 'center',
+        alignSelf: 'center',
+        width: '80%',
     },
-    removeButton: {
-        backgroundColor: '#FF6B6B',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 5,
-    },
-    removeButtonText: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: '500',
+    removeFileText: {
+        color: '#FF2260',
+        fontSize: 16,
+        fontWeight: '600',
     },
     addButton: {
         backgroundColor: '#2260FF',
         borderRadius: 25,
         paddingVertical: 15,
         marginTop: 10,
-        marginBottom: 25,
+        marginBottom: 10,
         width: '80%',
         alignItems: 'center',
         alignSelf: 'center',
@@ -809,99 +638,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
-    // Date Picker Styles
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
+    loadingOverlay: {
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        marginTop: 10,
     },
-    datePickerContainer: {
-        backgroundColor: 'white',
-        borderRadius: 15,
-        padding: 20,
-        width: '90%',
-        maxHeight: '80%',
-    },
-    datePickerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 20,
+    loadingText: {
+        marginTop: 10,
         color: '#2260FF',
-    },
-    pickerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    pickerContainer: {
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    pickerLabel: {
         fontSize: 14,
-        fontWeight: '600',
-        textAlign: 'center',
-        marginBottom: 5,
-        color: '#2260FF',
-    },
-    pickerScroll: {
-        height: 150,
-        borderWidth: 1,
-        borderColor: '#ECF1FF',
-        borderRadius: 8,
-    },
-    pickerItem: {
-        paddingVertical: 8,
-        paddingHorizontal: 5,
-        alignItems: 'center',
-    },
-    selectedPickerItem: {
-        backgroundColor: '#2260FF',
-        borderRadius: 5,
-    },
-    pickerItemText: {
-        fontSize: 14,
-        color: '#666',
-    },
-    selectedPickerItemText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    selectedDateText: {
-        textAlign: 'center',
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 20,
-        color: '#2260FF',
-    },
-    datePickerButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    datePickerButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginHorizontal: 5,
-    },
-    cancelButton: {
-        backgroundColor: '#F5F5F5',
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-    },
-    confirmButton: {
-        backgroundColor: '#2260FF',
-    },
-    cancelButtonText: {
-        color: '#666',
-        fontWeight: '600',
-    },
-    confirmButtonText: {
-        color: 'white',
-        fontWeight: '600',
     },
 });
 

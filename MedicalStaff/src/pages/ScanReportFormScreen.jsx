@@ -14,32 +14,79 @@ const ScanReportFormScreen = ({ onBack }) => {
     const [category, setCategory] = useState('');
     const [comments, setComments] = useState('');
 
-    const baseUrl = 'http://10.185.72.247:8080';
+    const baseUrl = 'http://10.185.72.247:8082';
     const patientId = 'P123';
 
-    // Handle document upload with DocumentPicker - WORKING VERSION
+    // Handle document upload with DocumentPicker - FIXED VERSION FOR OLDER API
     const handleDocumentUpload = useCallback(async () => {
         try {
             console.log('🚀 Starting document picker...');
 
-            // Use pickSingle for single file selection (returns string URI)
-            const fileUri = await DocumentPicker.pickSingle({
+            // Use pickSingle - older versions return just the URI string
+            const result = await DocumentPicker.pickSingle({
                 type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
             });
 
-            console.log('✅ File selected:', fileUri);
+            console.log('✅ Raw file result:', JSON.stringify(result, null, 2));
+            console.log('✅ Result type:', typeof result);
 
-            // Extract filename from URI
-            const uriParts = fileUri.split('/');
-            let fileName = uriParts[uriParts.length - 1];
-            fileName = decodeURIComponent(fileName);
+            // Handle different return types (older vs newer API)
+            let fileUri, fileName, fileType, fileSize;
+
+            if (typeof result === 'string') {
+                // Older API - returns just URI string
+                fileUri = result;
+                
+                // Extract filename from URI
+                const uriParts = fileUri.split('/');
+                const lastPart = decodeURIComponent(uriParts[uriParts.length - 1]);
+                
+                // Try to extract actual filename or generate one
+                if (lastPart.includes(':')) {
+                    // Content URI format like "image:1000056278"
+                    const contentId = lastPart.split(':')[1];
+                    
+                    // Check if it's an image from media store
+                    if (fileUri.includes('image')) {
+                        fileName = `image_${contentId}.jpg`;
+                        fileType = 'image/jpeg';
+                    } else if (fileUri.includes('document')) {
+                        fileName = `document_${contentId}.pdf`;
+                        fileType = 'application/pdf';
+                    } else {
+                        fileName = `file_${contentId}`;
+                        fileType = 'application/octet-stream';
+                    }
+                } else {
+                    fileName = lastPart;
+                    // Try to detect type from filename
+                    const ext = fileName.split('.').pop()?.toLowerCase();
+                    if (ext === 'pdf') {
+                        fileType = 'application/pdf';
+                    } else if (['jpg', 'jpeg'].includes(ext)) {
+                        fileType = 'image/jpeg';
+                    } else if (ext === 'png') {
+                        fileType = 'image/png';
+                    } else {
+                        fileType = 'image/jpeg'; // Default to image
+                    }
+                }
+            } else {
+                // Newer API - returns object
+                fileUri = result.fileCopyUri || result.uri;
+                fileName = result.name || 'unknown_file';
+                fileType = result.type || 'application/octet-stream';
+                fileSize = result.size;
+            }
 
             const fileInfo = {
                 uri: fileUri,
                 name: fileName,
-                type: 'application/octet-stream' // Default type
+                type: fileType,
+                size: fileSize
             };
 
+            console.log('📁 File info prepared:', fileInfo);
             setUploadedFile(fileInfo);
             Alert.alert('Success', `File "${fileName}" selected successfully!`);
 
@@ -53,7 +100,7 @@ const ScanReportFormScreen = ({ onBack }) => {
         }
     }, []);
 
-    // Handle adding scan report with proper file upload - WORKING VERSION
+    // Handle adding scan report with proper file upload - FIXED VERSION
     const handleAddScanReport = async () => {
         if (!scanStatus.trim()) {
             Alert.alert('Error', 'Please enter scan status');
@@ -93,27 +140,37 @@ const ScanReportFormScreen = ({ onBack }) => {
             // Create form data for multipart/form-data
             const formData = new FormData();
 
-            // Add the scan report as JSON string
+            // Add the scan report as JSON string (your backend is already set up correctly for this)
             formData.append('scanReport', JSON.stringify(scanReportData));
 
-            // Add file if uploaded - WORKING FILE HANDLING
-            if (uploadedFile) {
+            // Add file if uploaded - FIXED FILE HANDLING
+            if (uploadedFile && uploadedFile.name && uploadedFile.uri) {
                 console.log('📤 Adding file to formData:', uploadedFile);
 
-                // Determine MIME type based on file extension
-                const fileExtension = uploadedFile.name.split('.').pop()?.toLowerCase();
-                let mimeType = 'application/octet-stream';
-
-                if (fileExtension === 'pdf') {
-                    mimeType = 'application/pdf';
-                } else if (['jpg', 'jpeg'].includes(fileExtension)) {
-                    mimeType = 'image/jpeg';
-                } else if (fileExtension === 'png') {
-                    mimeType = 'image/png';
-                } else if (fileExtension === 'gif') {
-                    mimeType = 'image/gif';
+                // Determine MIME type based on file type or extension
+                let mimeType = uploadedFile.type;
+                
+                // If type is generic or missing, infer from file extension
+                if (!mimeType || mimeType === 'application/octet-stream') {
+                    const fileExtension = uploadedFile.name.split('.').pop()?.toLowerCase();
+                    
+                    if (fileExtension === 'pdf') {
+                        mimeType = 'application/pdf';
+                    } else if (['jpg', 'jpeg'].includes(fileExtension)) {
+                        mimeType = 'image/jpeg';
+                    } else if (fileExtension === 'png') {
+                        mimeType = 'image/png';
+                    } else if (fileExtension === 'gif') {
+                        mimeType = 'image/gif';
+                    } else {
+                        // Default to image/jpeg for unknown image types
+                        mimeType = 'image/jpeg';
+                    }
                 }
 
+                console.log('📝 Determined MIME type:', mimeType);
+
+                // Create proper file object for FormData
                 const file = {
                     uri: uploadedFile.uri,
                     type: mimeType,
@@ -121,21 +178,28 @@ const ScanReportFormScreen = ({ onBack }) => {
                 };
 
                 formData.append('file', file);
-                console.log('✅ File added to formData with MIME type:', mimeType);
+                console.log('✅ File added to formData:', file);
             } else {
-                console.log('ℹ️ No file selected, uploading without file');
+                console.log('ℹ️ No valid file selected, uploading without file');
+                if (uploadedFile) {
+                    console.log('⚠️ File is missing required properties:', uploadedFile);
+                }
             }
 
             const url = `${baseUrl}/patients/${patientId}/scan-reports`;
             console.log('🌐 Making request to:', url);
+            console.log('📦 FormData contents:');
+            console.log('  - scanReport: JSON string');
+            console.log('  - file:', uploadedFile ? `${uploadedFile.name} (${uploadedFile.type})` : 'none');
 
             // Make API call
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    // Let React Native set Content-Type automatically for FormData
-                },
                 body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    // Don't set Content-Type - let it be set automatically with boundary
+                },
             });
 
             console.log('📡 Response status:', response.status);
@@ -148,8 +212,7 @@ const ScanReportFormScreen = ({ onBack }) => {
 
                 Alert.alert(
                     'Scan Report Submitted',
-                    `Your scan report has been successfully submitted.${result.fileUrl ? '\n\nThe attached file has been uploaded to Google Drive.' : ''
-                    }`,
+                    `Your scan report has been successfully submitted.${result.fileUrl ? '\n\nThe attached file has been uploaded to Google Drive.' : ''}`,
                     [
                         {
                             text: 'OK',
@@ -173,8 +236,14 @@ const ScanReportFormScreen = ({ onBack }) => {
                 let errorMessage = `Server error: ${response.status}`;
                 try {
                     const errorText = await response.text();
+                    console.log('❌ Error response:', errorText);
                     if (errorText) {
-                        errorMessage = errorText;
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            errorMessage = errorJson.message || errorJson.error || errorMessage;
+                        } catch (e) {
+                            errorMessage = errorText || errorMessage;
+                        }
                     }
                 } catch (e) {
                     console.log('❌ Could not read error response body');
@@ -199,6 +268,11 @@ const ScanReportFormScreen = ({ onBack }) => {
                 Alert.alert(
                     'Timeout',
                     'The request took too long. Please try again.'
+                );
+            } else if (error.message.includes('415') || error.message.includes('Unsupported Media Type')) {
+                Alert.alert(
+                    'Server Configuration Error',
+                    'The server rejected the file format. Please check:\n\n• Backend accepts multipart/form-data\n• File field name is "file"\n• Accepted file types match (PDF, JPEG, PNG)\n\nError details: ' + error.message
                 );
             } else {
                 Alert.alert(
@@ -368,6 +442,19 @@ const ScanReportFormScreen = ({ onBack }) => {
                         </Text>
                     </TouchableOpacity>
 
+                    {/* Show file details if selected */}
+                    {uploadedFile && (
+                        <View style={styles.fileInfoContainer}>
+                            <Text style={styles.fileInfoText}>File: {uploadedFile.name}</Text>
+                            <Text style={styles.fileInfoText}>Type: {uploadedFile.type}</Text>
+                            {uploadedFile.size && (
+                                <Text style={styles.fileInfoText}>
+                                    Size: {(uploadedFile.size / 1024).toFixed(2)} KB
+                                </Text>
+                            )}
+                        </View>
+                    )}
+
                     {/* Remove file button if file is selected */}
                     {uploadedFile && (
                         <TouchableOpacity
@@ -506,6 +593,17 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
         color: '#809CFF',
+    },
+    fileInfoContainer: {
+        backgroundColor: '#F0F4FF',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 10,
+    },
+    fileInfoText: {
+        fontSize: 14,
+        color: '#2260FF',
+        marginBottom: 4,
     },
     removeFileButton: {
         backgroundColor: '#FFECF0',

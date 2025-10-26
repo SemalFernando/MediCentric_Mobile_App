@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StatusBar, Platform, StyleSheet, BackHandler, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar, Platform, StyleSheet, View } from 'react-native';
 
 // For Android navigation bar
 let NavigationBarColor;
@@ -28,16 +27,14 @@ const ScreenWrapper = ({
         try {
           console.log('Changing navigation bar color to:', backgroundColor);
           
-          // Method 1: Try changing color
           await NavigationBarColor.changeNavigationBarColor(
             backgroundColor, 
             barStyle === 'light-content'
           );
           
-          // Method 2: Also try setting it to translucent
           if (translucent) {
             await NavigationBarColor.changeNavigationBarColor(
-              '#00000000', // Transparent
+              '#00000000',
               barStyle === 'light-content'
             );
           }
@@ -45,7 +42,6 @@ const ScreenWrapper = ({
         } catch (error) {
           console.log('Error changing navigation bar:', error);
           
-          // Fallback: Try the alternative method
           try {
             await NavigationBarColor.changeNavigationBarColor(
               backgroundColor, 
@@ -57,22 +53,19 @@ const ScreenWrapper = ({
         }
       };
 
-      // Only change if background color actually changed
       if (prevBackgroundColor.current !== backgroundColor) {
         changeNavigationBar();
         prevBackgroundColor.current = backgroundColor;
       } else {
-        changeNavigationBar(); // Still try to set it on first render
+        changeNavigationBar();
       }
     }
   }, [backgroundColor, barStyle, translucent]);
 
-  // Additional effect to handle app state changes
   useEffect(() => {
     if (Platform.OS === 'android' && NavigationBarColor) {
       const handleAppStateChange = async () => {
         try {
-          // Re-apply navigation bar color when app comes to foreground
           await NavigationBarColor.changeNavigationBarColor(
             backgroundColor, 
             barStyle === 'light-content'
@@ -82,29 +75,34 @@ const ScreenWrapper = ({
         }
       };
 
-      // Re-apply when component mounts
       handleAppStateChange();
     }
   }, []);
 
   return (
-    <SafeAreaView 
-      style={[styles.container, { backgroundColor }]} 
-      edges={['right', 'left']} // REMOVED 'top' from here - this fixes the margin issue
-    >
+    <View style={[styles.container, { backgroundColor }]}>
       <StatusBar 
         backgroundColor={translucent ? 'transparent' : backgroundColor}
         barStyle={statusBarStyle}
         translucent={translucent}
       />
-      {children}
-    </SafeAreaView>
+      <View style={styles.forceRemoveTopSpace}>
+        {children}
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  forceRemoveTopSpace: {
+    flex: 1,
+    marginTop: Platform.OS === 'ios' ? -44 : -24, // Force remove space
+    paddingTop: 0,
+    borderWidth: 0, // For debugging
+    borderColor: 'red',
   },
 });
 

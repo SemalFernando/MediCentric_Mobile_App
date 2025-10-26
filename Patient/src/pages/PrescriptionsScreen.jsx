@@ -337,9 +337,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#CAD6FF',
         padding: 20,
         flex: 1,
+        paddingBottom: 50,
     },
     cardsContainer: {
-        marginBottom: -12,
+        marginBottom: -5,
     },
     prescriptionCard: {
         backgroundColor: '#FFFFFF',
