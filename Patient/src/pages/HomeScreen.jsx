@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView,
 import ScreenWrapper from '../components/ScreenWrapper';
 import MedBot from '../components/MedBot';
 
-const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile, onNavigateToDiagnose, route }) => {
+const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile, onNavigateToDiagnose, onNavigateToQrCode, route }) => {
     const [activePage, setActivePage] = useState('home');
     const [patientData, setPatientData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,8 +48,8 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
 
     const handleQRPress = () => {
         setActivePage('qr');
-        if (onNavigateToQRScanner) {
-            onNavigateToQRScanner();
+        if (onNavigateToQrCode) {
+            onNavigateToQrCode();
         }
     };
 
@@ -93,7 +93,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
 
     if (isLoading) {
         return (
-            <ScreenWrapper 
+            <ScreenWrapper
                 backgroundColor="#FFFFFF"
                 statusBarStyle="dark-content"
                 barStyle="dark-content"

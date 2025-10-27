@@ -11,6 +11,7 @@ import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import ConsentScreen from './src/pages/ConsentScreen';
 import ProfileScreen from './src/pages/ProfileScreen';
+import QrCodeScreen from './src/pages/QrCodeScreen'; // Import the QR code screen
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -104,6 +105,15 @@ const App = () => {
     setCurrentScreen('home');
   };
 
+  // Navigate to QR code screen
+  const navigateToQrCode = () => {
+    setCurrentScreen('qrCode');
+  };
+
+  const navigateBackFromQrCode = () => {
+    setCurrentScreen('home');
+  };
+
   // Handle logout from home screen
   const handleLogout = () => {
     setScannedPatient(null);
@@ -125,6 +135,7 @@ const App = () => {
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
           onNavigateToProfile={navigateToProfile}
+          onNavigateToQrCode={navigateToQrCode} // Make sure this line is present
           route={{ params: { patientId } }}
         />
       );
@@ -191,6 +202,12 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
+        />
+      );
+    case 'qrCode':
+      return (
+        <QrCodeScreen
+          onBack={navigateBackFromQrCode}
         />
       );
     case 'welcome':
