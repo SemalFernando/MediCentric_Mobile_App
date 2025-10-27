@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 
-const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
+const SignUpScreen = ({ onBack, onNavigateToLogin, onNavigateToQrCode }) => { // NEW: Added onNavigateToQrCode prop
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,7 +72,7 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
 
       console.log('Sending patient data:', patientData);
 
-      const response = await fetch('http://192.168.1.4:8080/patients', {
+      const response = await fetch('http://10.185.72.247:8080/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,9 +94,15 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
 
       console.log('Registration successful:', responseData);
       
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'OK', onPress: () => onNavigateToLogin() }
-      ]);
+      // NEW: Navigate to QR code screen instead of login
+      if (onNavigateToQrCode) {
+        onNavigateToQrCode(responseData); // Pass the patient data to QR screen
+      } else {
+        // Fallback: if QR navigation not available, go to login
+        Alert.alert('Success', 'Account created successfully!', [
+          { text: 'OK', onPress: () => onNavigateToLogin() }
+        ]);
+      }
       
     } catch (error) {
       console.error('Registration error:', error);
@@ -340,7 +346,7 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.signupButtonText}>Sign Up</Text>
+            <Text style={styles.signupButtonText}>Create Account</Text> // UPDATED: Button text
           )}
         </TouchableOpacity>
 
@@ -373,6 +379,7 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
   );
 };
 
+// ... (styles remain the same)
 const styles = StyleSheet.create({
   container: {
     flex: 1,

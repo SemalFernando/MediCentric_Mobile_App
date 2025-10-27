@@ -8,19 +8,28 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     const [patientData, setPatientData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Get patientId from route params
+    // Get patientId and patientData from route params - KEY CHANGE
     const patientId = route.params?.patientId;
+    const patientDataFromRoute = route.params?.patientData; // Get patient data passed from login
     const BASE_URL = 'http://10.185.72.247:8080';
 
-    // Fetch patient data when component mounts
+    // Fetch patient data when component mounts - UPDATED LOGIC
     useEffect(() => {
-        if (patientId) {
+        console.log('HomeScreen - Route params:', route.params);
+        
+        if (patientDataFromRoute) {
+            // If we already have patient data from login, use it directly
+            console.log('Using patient data from route:', patientDataFromRoute);
+            setPatientData(patientDataFromRoute);
+            setIsLoading(false);
+        } else if (patientId) {
+            // If we only have patient ID, fetch the full data
             fetchPatientData();
         } else {
             setIsLoading(false);
-            Alert.alert('Error', 'No patient ID found. Please login again.');
+            Alert.alert('Error', 'No patient data found. Please login again.');
         }
-    }, [patientId]);
+    }, [patientId, patientDataFromRoute]);
 
     const fetchPatientData = async () => {
         try {
@@ -38,6 +47,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
 
             const data = await response.json();
             setPatientData(data);
+            console.log('Fetched patient data:', data);
         } catch (error) {
             console.error('Error fetching patient data:', error);
             Alert.alert('Error', 'Failed to load patient data. Please try again.');
@@ -48,6 +58,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
 
     const handleQRPress = () => {
         setActivePage('qr');
+        console.log('QR Press - Current patient data:', patientData);
         if (onNavigateToQrCode) {
             onNavigateToQrCode();
         }

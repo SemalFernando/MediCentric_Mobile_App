@@ -78,23 +78,21 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
         };
       }
 
-      console.log('Login successful:', responseData);
+      console.log('Login successful - Full response:', responseData);
       
-      // Extract patient ID - KEY CHANGE HERE
-      const patientId = responseData.id || responseData.patientId;
-      
-      if (!patientId) {
-        throw new Error('No patient ID received from server. Please contact support.');
+      // KEY CHANGE: Pass the FULL patient data to home screen
+      if (!responseData) {
+        throw new Error('No patient data received from server. Please contact support.');
       }
 
-      console.log('Extracted patient ID:', patientId);
+      console.log('Passing full patient data to home screen');
       
       Alert.alert('Success', 'Login successful!', [
         { 
           text: 'OK', 
           onPress: () => {
-            // Pass patient ID to home screen
-            onNavigateToHome(patientId);
+            // Pass FULL patient data to home screen - KEY CHANGE
+            onNavigateToHome(responseData);
           }
         }
       ]);

@@ -5,110 +5,140 @@ import {
   View, 
   StyleSheet, 
   TouchableOpacity,
-  ScrollView 
+  ScrollView,
+  Image
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-const QrCodeScreen = ({ onBack }) => {
-  // Sample patient data - you can replace this with actual data from props or context
-  const patientData = {
-    id: 'PAT123456',
-    name: 'John Doe',
-    emergencyContact: '+1-234-567-8900',
-    bloodType: 'O+',
-    allergies: ['Penicillin', 'Peanuts']
-  };
+const QrCodeScreen = ({ 
+  onBack, 
+  patientData, 
+  route, 
+  onNavigateToHome, 
+  onNavigateToReports, 
+  onNavigateToPrescriptions
+}) => {
+  // Use patient data from props or route params
+  const actualPatientData = patientData || route.params?.patientData;
+  
+  console.log('QR Screen - Patient Data:', actualPatientData);
 
-  // QR code value containing patient information
-  const qrValue = JSON.stringify({
-    patientId: patientData.id,
-    name: patientData.name,
-    emergencyContact: patientData.emergencyContact,
-    bloodType: patientData.bloodType,
-    timestamp: new Date().toISOString()
-  });
+  // If no patient data, show error
+  if (!actualPatientData || !actualPatientData.patientId) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No patient data found</Text>
+          <Text style={styles.errorSubtext}>Please login again</Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={onBack}>
+            <Text style={styles.primaryButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Handle QR code value - parse the JSON string from backend
+  let qrValue;
+  if (actualPatientData.qrCode) {
+    try {
+      // If it's a JSON string, parse it and use as QR content
+      const qrData = JSON.parse(actualPatientData.qrCode);
+      qrValue = JSON.stringify(qrData);
+    } catch (error) {
+      // If not JSON, use as is
+      qrValue = actualPatientData.qrCode;
+    }
+  } else {
+    // Fallback: create QR code data
+    qrValue = JSON.stringify({
+      patientId: actualPatientData.patientId,
+      accessKey: actualPatientData.accessKey || 'DEFAULT_KEY',
+      type: 'medical_id',
+      timestamp: new Date().getTime().toString()
+    });
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Medical ID QR Code</Text>
-          <Text style={styles.subtitle}>
-            Scan this code for emergency medical information
+        {/* Ash Circle with QR Icon */}
+        <View style={styles.circleContainer}>
+          <View style={styles.ashCircle}>
+            <Image 
+              source={require('../assets/qr-code-scan.png')}
+              style={styles.qrIcon}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        {/* Instruction Text */}
+        <View style={styles.textContainer}>
+          <Text style={styles.instructionTitle}>This is your QR code.</Text>
+          <Text style={styles.instructionSubtitle}>
+            Ask your doctor to scan this for your medical information
           </Text>
         </View>
 
-        {/* QR Code Container */}
+        {/* QR Code Container - Big and Clean */}
         <View style={styles.qrContainer}>
           <View style={styles.qrWrapper}>
             <QRCode 
               value={qrValue}
-              size={250}
+              size={280}
               backgroundColor="#FFFFFF"
               color="#000000"
-              logo={require('../assets/profile-pic.png')} // Optional: add your app logo
-              logoSize={50}
-              logoBackgroundColor="transparent"
             />
           </View>
-          
-          <Text style={styles.qrDescription}>
-            This QR contains essential medical information that can be scanned by healthcare providers in emergencies.
-          </Text>
-        </View>
-
-        {/* Patient Information Summary */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Information Included:</Text>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Patient ID:</Text>
-            <Text style={styles.infoValue}>{patientData.id}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Name:</Text>
-            <Text style={styles.infoValue}>{patientData.name}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Blood Type:</Text>
-            <Text style={styles.infoValue}>{patientData.bloodType}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Emergency Contact:</Text>
-            <Text style={styles.infoValue}>{patientData.emergencyContact}</Text>
-          </View>
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>How to Use:</Text>
-          <Text style={styles.instruction}>• Show this QR code to healthcare providers</Text>
-          <Text style={styles.instruction}>• Keep it accessible in your wallet or phone</Text>
-          <Text style={styles.instruction}>• Update your information regularly</Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Share QR Code</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Save to Photos</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Back Button */}
-      {onBack && (
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-      )}
+      {/* Third Row Navigation - FIXED VERSION */}
+      <View style={styles.thirdRow}>
+        <View style={styles.navigationCard}>
+          {/* Home Icon */}
+          <TouchableOpacity
+            style={styles.navIcon}
+            onPress={onNavigateToHome}
+          >
+            <Image
+              source={require('../assets/home-icon2.png')}
+              style={styles.navIconImage}
+            />
+          </TouchableOpacity>
+
+          {/* QR Icon - Active (no onPress since we're already here) */}
+          <TouchableOpacity style={styles.navIcon}>
+            <Image
+              source={require('../assets/qr-icon1.png')}
+              style={[styles.navIconImage, styles.activeIcon]}
+            />
+          </TouchableOpacity>
+
+          {/* Prescription Icon */}
+          <TouchableOpacity
+            style={styles.navIcon}
+            onPress={onNavigateToPrescriptions}
+          >
+            <Image
+              source={require('../assets/prescription-icon2.png')}
+              style={styles.navIconImage}
+            />
+          </TouchableOpacity>
+
+          {/* Documents Icon */}
+          <TouchableOpacity
+            style={styles.navIcon}
+            onPress={onNavigateToReports}
+          >
+            <Image
+              source={require('../assets/docs-icon2.png')}
+              style={styles.navIconImage}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -122,145 +152,114 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     alignItems: 'center',
+    paddingBottom: 100,
   },
-  header: {
+  circleContainer: {
     alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2260FF',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  qrContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  qrWrapper: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    marginBottom: 15,
-  },
-  qrDescription: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 20,
-  },
-  infoCard: {
-    backgroundColor: '#F8F9FF',
-    padding: 20,
-    borderRadius: 12,
-    width: '100%',
     marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2260FF',
+    marginTop: 40,
   },
-  infoTitle: {
+  ashCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#E5E5E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  qrIcon: {
+    width: 40,
+    height: 40,
+    tintColor: '#000000',
+  },
+  textContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  instructionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#2260FF',
-    marginBottom: 15,
+    marginBottom: 5,
+    textAlign: 'center',
   },
-  infoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  instructionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  qrContainer: {
     alignItems: 'center',
-    marginBottom: 10,
-    paddingVertical: 5,
+    marginTop: 20,
   },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
+  qrWrapper: {
+    backgroundColor: '#FFFFFF',
+    padding: 30,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  infoValue: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '400',
+  thirdRow: {
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    alignItems: 'center',
   },
-  instructionsCard: {
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 12,
-    width: '100%',
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  instructionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2260FF',
-    marginBottom: 12,
-  },
-  instruction: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  actionsContainer: {
+  navigationCard: {
+    width: 298,
+    height: 48,
+    backgroundColor: '#2260FF',
+    borderRadius: 24,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    gap: 10,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  navIcon: {
+    padding: 10,
+  },
+  navIconImage: {
+    width: 24,
+    height: 24,
+    tintColor: '#FFFFFF',
+  },
+  activeIcon: {
+    tintColor: 'black',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF0000',
+    marginBottom: 10,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
   },
   primaryButton: {
-    flex: 1,
     backgroundColor: '#2260FF',
-    paddingVertical: 15,
+    padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+    minWidth: 120,
   },
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: '#F0F0F0',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DDD',
-  },
-  secondaryButtonText: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 10,
-    left: 20,
-    padding: 10,
-    zIndex: 10,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#2260FF',
     fontWeight: '600',
   },
 });

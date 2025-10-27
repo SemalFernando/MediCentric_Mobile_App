@@ -11,7 +11,7 @@ import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import ConsentScreen from './src/pages/ConsentScreen';
 import ProfileScreen from './src/pages/ProfileScreen';
-import QrCodeScreen from './src/pages/QrCodeScreen'; // Import the QR code screen
+import QrCodeScreen from './src/pages/QrCodeScreen';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +20,7 @@ const App = () => {
   const [userRole, setUserRole] = useState(null);
   const [patientData, setPatientData] = useState(null);
   const [patientId, setPatientId] = useState(null);
+  const [newPatientData, setNewPatientData] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -34,12 +35,21 @@ const App = () => {
   }
 
   // Handle navigation between screens
-  const navigateToHome = (patientIdFromLogin = null) => {
-    if (patientIdFromLogin) {
-      setPatientId(patientIdFromLogin);
-      console.log('Patient ID set:', patientIdFromLogin);
+  const navigateToHome = (patientDataFromLogin = null) => {
+    console.log('navigateToHome received:', patientDataFromLogin);
+    
+    if (patientDataFromLogin && patientDataFromLogin.patientId) {
+      setPatientId(patientDataFromLogin.patientId);
+      setPatientData(patientDataFromLogin);
+      console.log('Patient data set successfully');
     }
     setCurrentScreen('home');
+  };
+
+  // Navigate to QR code screen after successful registration
+  const navigateToQrCodeAfterSignup = (patientData) => {
+    setNewPatientData(patientData);
+    setCurrentScreen('qrCode');
   };
 
   const navigateToWelcome = () => {
@@ -47,6 +57,7 @@ const App = () => {
     setUserRole(null);
     setPatientData(null);
     setPatientId(null);
+    setNewPatientData(null);
   };
 
   const navigateToLogin = () => {
@@ -114,12 +125,22 @@ const App = () => {
     setCurrentScreen('home');
   };
 
+  // Navigate from QR screen to home after registration
+  const navigateFromQrToHome = () => {
+    if (newPatientData && newPatientData.patientId) {
+      setPatientId(newPatientData.patientId);
+      setPatientData(newPatientData);
+    }
+    setCurrentScreen('home');
+  };
+
   // Handle logout from home screen
   const handleLogout = () => {
     setScannedPatient(null);
     setUserRole(null);
     setPatientData(null);
     setPatientId(null);
+    setNewPatientData(null);
     setCurrentScreen('welcome');
   };
 
@@ -135,8 +156,8 @@ const App = () => {
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
           onNavigateToProfile={navigateToProfile}
-          onNavigateToQrCode={navigateToQrCode} // Make sure this line is present
-          route={{ params: { patientId } }}
+          onNavigateToQrCode={navigateToQrCode}
+          route={{ params: { patientId, patientData } }}
         />
       );
     case 'profile':
@@ -144,7 +165,7 @@ const App = () => {
         <ProfileScreen
           onBack={navigateBackFromProfile}
           onLogout={handleLogout}
-          route={{ params: { patientId } }}
+          route={{ params: { patientId, patientData } }}
         />
       );
     case 'login':
@@ -161,6 +182,7 @@ const App = () => {
         <SignUpScreen
           onBack={navigateToWelcome}
           onNavigateToLogin={navigateToLogin}
+          onNavigateToQrCode={navigateToQrCodeAfterSignup}
         />
       );
     case 'setPassword':
@@ -208,6 +230,15 @@ const App = () => {
       return (
         <QrCodeScreen
           onBack={navigateBackFromQrCode}
+          patientData={newPatientData || patientData} // FIX: Use both new and existing patient data
+          route={{ params: { 
+            patientId: newPatientData?.patientId || patientId,
+            patientData: newPatientData || patientData 
+          }}}
+          onNavigateToHome={navigateToHome}
+          onNavigateToReports={navigateToReports}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToQrCode={navigateToQrCode}
         />
       );
     case 'welcome':
