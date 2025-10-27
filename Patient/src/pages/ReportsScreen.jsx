@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import MedBot from '../components/MedBot';
 
@@ -13,6 +13,40 @@ const ReportsScreen = ({
 }) => {
     const [activePage, setActivePage] = useState('documents');
     const [selectedReport, setSelectedReport] = useState(null);
+    const [labReports, setLabReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Configuration - Updated with your specific values
+    const BASE_URL = 'http://10.185.72.247:8083';
+    const PATIENT_ID = 'P1234';
+
+    // Fetch lab reports from backend
+    const fetchLabReports = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const response = await fetch(`${BASE_URL}/patients/${PATIENT_ID}/lab-reports`);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch lab reports: ${response.status}`);
+            }
+            
+            const reports = await response.json();
+            setLabReports(reports);
+        } catch (err) {
+            console.error('Error fetching lab reports:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load reports when component mounts
+    useEffect(() => {
+        fetchLabReports();
+    }, []);
 
     const handleHomePress = () => {
         setActivePage('home');
@@ -53,6 +87,93 @@ const ReportsScreen = ({
         // Here you can add navigation to detailed report view
     };
 
+    // Function to format date for display (e.g., "25th October")
+    const formatDateDisplay = (dateString) => {
+        if (!dateString) return 'Date not available';
+        
+        try {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const suffix = getDaySuffix(day);
+            const month = date.toLocaleString('default', { month: 'long' });
+            return `${day}${suffix} ${month}`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid date';
+        }
+    };
+
+    // Helper function to get day suffix (st, nd, rd, th)
+    const getDaySuffix = (day) => {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
+    };
+
+    // Group reports by date (using labReportDate from API)
+    const groupReportsByDate = (reports) => {
+        const grouped = {};
+        
+        reports.forEach(report => {
+            // Use labReportDate from the API response
+            if (report.labReportDate) {
+                const date = new Date(report.labReportDate);
+                const dateKey = date.toDateString(); // This creates a unique key for each date
+                
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = {
+                        displayDate: formatDateDisplay(report.labReportDate),
+                        reports: []
+                    };
+                }
+                grouped[dateKey].reports.push(report);
+            }
+        });
+        
+        // Sort dates in descending order (most recent first)
+        const sortedGroups = {};
+        Object.keys(grouped)
+            .sort((a, b) => new Date(b) - new Date(a))
+            .forEach(key => {
+                sortedGroups[key] = grouped[key];
+            });
+        
+        return sortedGroups;
+    };
+
+    // Render loading state
+    if (loading) {
+        return (
+            <ScreenWrapper backgroundColor="#FFFFFF">
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2260FF" />
+                    <Text style={styles.loadingText}>Loading lab reports...</Text>
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    // Render error state
+    if (error) {
+        return (
+            <ScreenWrapper backgroundColor="#FFFFFF">
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Error loading lab reports</Text>
+                    <Text style={styles.errorSubText}>{error}</Text>
+                    <TouchableOpacity style={styles.retryButton} onPress={fetchLabReports}>
+                        <Text style={styles.retryButtonText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    const groupedReports = groupReportsByDate(labReports);
+
     return (
         <ScreenWrapper
             backgroundColor="#FFFFFF"
@@ -67,17 +188,14 @@ const ReportsScreen = ({
                         <Text style={styles.backText}>‹</Text>
                     </TouchableOpacity>
                     <Text style={styles.title}>Lab Reports</Text>
-                    <View style={styles.placeholder} />
+                    <TouchableOpacity onPress={fetchLabReports} style={styles.refreshButton}>
+                        <Text style={styles.refreshText}>↻</Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Date and Filter Row */}
+                {/* Date and Filter Row - Removed the first date card */}
                 <View style={styles.filterRow}>
-                    {/* Date Card */}
-                    <View style={styles.dateCard}>
-                        <Text style={styles.dateText}>26th April</Text>
-                    </View>
-
-                    {/* Filter Card */}
+                    {/* Filter Card only - takes full width */}
                     <View style={styles.filterCard}>
                         <Text style={styles.filterPlaceholder}>filter reports...</Text>
                         <Image
@@ -89,123 +207,60 @@ const ReportsScreen = ({
 
                 {/* Reports List */}
                 <View style={styles.reportsList}>
-                    {/* Report Item 1 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 1 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(1)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Sugar (Glucose) Report</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Measures blood sugar levels to check for diabetes or prediabetes.
+                    {Object.keys(groupedReports).length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyStateText}>No lab reports found</Text>
+                            <Text style={styles.emptyStateSubText}>
+                                Lab reports will appear here once they are added to your record.
                             </Text>
                         </View>
-                    </TouchableOpacity>
+                    ) : (
+                        Object.entries(groupedReports).map(([dateKey, dateGroup]) => (
+                            <View key={dateKey}>
+                                {/* Date Card for each group */}
+                                <View style={[styles.dateCard, styles.groupDateCard]}>
+                                    <Text style={styles.dateText} numberOfLines={1}>
+                                        {dateGroup.displayDate}
+                                    </Text>
+                                </View>
 
-                    {/* Report Item 2 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 2 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(2)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Complete Blood Count (CBC)</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Evaluates overall health and detects various disorders like anemia, infection.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Report Item 3 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 3 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(3)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Lipid Panel</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Measures cholesterol levels and triglycerides to assess heart disease risk.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Second Date Card */}
-                    <View style={[styles.dateCard, styles.secondDateCard]}>
-                        <Text style={styles.dateText}>19th April</Text>
-                    </View>
-
-                    {/* Spacing under second date card */}
-                    <View style={styles.dateCardSpacing} />
-
-                    {/* Report Item 4 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 4 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(4)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Liver Function Test</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Checks liver health by measuring enzymes, proteins, and substances.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Report Item 5 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 5 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(5)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Thyroid Function Test</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Measures thyroid hormone levels to diagnose thyroid disorders.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                                {/* Reports for this date */}
+                                {dateGroup.reports.map((report, index) => (
+                                    <TouchableOpacity 
+                                        key={report.labReportId || index}
+                                        style={[
+                                            styles.reportItem,
+                                            selectedReport === report.labReportId && styles.selectedReportItem
+                                        ]}
+                                        onPress={() => handleReportPress(report.labReportId)}
+                                    >
+                                        <View style={styles.reportIconContainer}>
+                                            <Image
+                                                source={require('../assets/docs-icon2.png')}
+                                                style={styles.docIcon}
+                                            />
+                                        </View>
+                                        <View style={styles.reportContent}>
+                                            <Text style={styles.reportName}>
+                                                {report.labReportType || 'Lab Report'}
+                                            </Text>
+                                            <Text style={styles.reportDescription} numberOfLines={2}>
+                                                {report.labReportDescription || 'No description available'}
+                                            </Text>
+                                            {report.labReportResults && (
+                                                <Text style={styles.reportResults} numberOfLines={1}>
+                                                    Results: {report.labReportResults}
+                                                </Text>
+                                            )}
+                                            <Text style={styles.reportStatus}>
+                                                Status: {report.status || 'UNKNOWN'}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        ))
+                    )}
                 </View>
 
                 {/* Navigation Bar */}
@@ -314,15 +369,20 @@ const styles = StyleSheet.create({
         fontWeight: 'regular',
         marginTop: 0,
     },
+    refreshButton: {
+        padding: 5,
+    },
+    refreshText: {
+        fontSize: 24,
+        color: '#2260FF',
+        fontWeight: 'bold',
+    },
     title: {
         fontSize: 24,
         fontWeight: '600',
         color: '#2260FF',
         textAlign: 'center',
         flex: 1,
-    },
-    placeholder: {
-        width: 24,
     },
     filterRow: {
         flexDirection: 'row',
@@ -335,25 +395,26 @@ const styles = StyleSheet.create({
     dateCard: {
         backgroundColor: '#CAD6FF',
         borderRadius: 24,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
         minWidth: 120,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
     },
-    secondDateCard: {
+    groupDateCard: {
         marginTop: 5,
-        width: 120,
+        width: 130,
         alignSelf: 'flex-start',
-    },
-    dateCardSpacing: {
-        height: 15,
+        marginBottom: 10,
     },
     dateText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: '#2260FF',
-        textAlign: 'center',
+        textAlign: 'left',
+        width: '100%',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     filterCard: {
         backgroundColor: '#CAD6FF',
@@ -421,6 +482,18 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         lineHeight: 18,
+        marginBottom: 4,
+    },
+    reportResults: {
+        fontSize: 12,
+        color: '#888',
+        fontStyle: 'italic',
+        marginBottom: 2,
+    },
+    reportStatus: {
+        fontSize: 12,
+        color: '#2260FF',
+        fontWeight: '500',
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',
@@ -448,6 +521,63 @@ const styles = StyleSheet.create({
     },
     inactiveIcon: {
         tintColor: '#FFFFFF',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#2260FF',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 18,
+        color: '#FF0000',
+        fontWeight: '600',
+        marginBottom: 10,
+    },
+    errorSubText: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    retryButton: {
+        backgroundColor: '#2260FF',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+    },
+    emptyStateText: {
+        fontSize: 18,
+        color: '#666',
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    emptyStateSubText: {
+        fontSize: 14,
+        color: '#999',
+        textAlign: 'center',
     },
 });
 

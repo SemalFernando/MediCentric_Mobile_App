@@ -29,7 +29,7 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
 
       console.log('Sending login data:', loginData);
 
-      const response = await fetch('http://192.168.1.4:8080/patients/login', {
+      const response = await fetch('http://10.185.72.247:8080/patients/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

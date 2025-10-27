@@ -10,7 +10,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
 
     // Get patientId from route params
     const patientId = route.params?.patientId;
-    const BASE_URL = 'http://192.168.1.4:8080';
+    const BASE_URL = 'http://10.185.72.247:8080';
 
     // Fetch patient data when component mounts
     useEffect(() => {

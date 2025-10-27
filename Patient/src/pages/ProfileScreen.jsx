@@ -17,7 +17,7 @@ const ProfileScreen = ({ route, onBack, onLogout }) => {
 
   // Get patientId from navigation params
   const patientId = route.params?.patientId;
-  const BASE_URL = 'http://192.168.1.4:8080';
+  const BASE_URL = 'http://10.185.72.247:8080';
 
   // Format date from "1990-05-15T00:00:00.000+00:00" to "05/15/1990"
   const formatDateForDisplay = (dateString) => {
