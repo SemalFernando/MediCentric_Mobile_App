@@ -14,11 +14,9 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Function to format date to ISO string (as expected by your API)
   const formatDateToISO = (dateString) => {
     if (!dateString) return '';
     
-    // Assuming date format is MM/DD/YYYY
     const parts = dateString.split('/');
     if (parts.length !== 3) return '';
     
@@ -26,48 +24,55 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
     const day = parts[1].padStart(2, '0');
     const year = parts[2];
     
-    // Create ISO string (YYYY-MM-DDTHH:mm:ss.sssZ)
-    return `${year}-${month}-${day}T00:00:00.000Z`;
+    return `${year}-${month}-${day}`;
   };
 
   const handleSignUp = async () => {
-    // Basic validation
     if (!fullName || !email || !password || !mobileNumber || !dateOfBirth || !gender || !bloodType || !address || !patientNic) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Email validation
+    const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+    if (!dateRegex.test(dateOfBirth)) {
+      Alert.alert('Error', 'Please enter date in MM/DD/YYYY format');
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
-    // Password validation (at least 6 characters)
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    if (patientNic.length < 5) {
+      Alert.alert('Error', 'Please enter a valid NIC number');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Prepare patient data according to your API schema
       const patientData = {
-        fullName,
-        gender,
+        fullName: fullName.trim(),
+        gender: gender.trim(),
         dob: formatDateToISO(dateOfBirth),
-        contactInfo: mobileNumber,
-        bloodType,
-        address,
-        patientNic,
-        email,
-        password
+        contactInfo: mobileNumber.trim(),
+        bloodType: bloodType.trim(),
+        address: address.trim(),
+        patientNic: patientNic.trim(),
+        email: email.trim().toLowerCase(),
+        password: password
       };
 
-      // Make API call to register patient
-      const response = await fetch('http://10.81.232.247:8080/patients', {
+      console.log('Sending patient data:', patientData);
+
+      const response = await fetch('http://192.168.1.4:8080/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,12 +80,19 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
         body: JSON.stringify(patientData),
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Registration failed');
+        if (response.status === 400) {
+          throw new Error(responseData.message || 'Invalid data provided');
+        } else if (response.status === 409) {
+          throw new Error(responseData.message || 'Patient with this email or NIC already exists');
+        } else {
+          throw new Error(responseData.message || `Registration failed with status: ${response.status}`);
+        }
       }
 
-      const patient = await response.json();
+      console.log('Registration successful:', responseData);
       
       Alert.alert('Success', 'Account created successfully!', [
         { text: 'OK', onPress: () => onNavigateToLogin() }
@@ -88,9 +100,36 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
       
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Error', error.message || 'Failed to create account. Please try again.');
+      
+      if (error.message.includes('Network request failed')) {
+        Alert.alert('Connection Error', 'Cannot connect to server. Please check your connection and try again.');
+      } else if (error.message.includes('Failed to fetch')) {
+        Alert.alert('Server Error', 'Cannot reach the server. Please make sure the backend is running on localhost:8080');
+      } else {
+        Alert.alert('Registration Error', error.message || 'Failed to create account. Please try again.');
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDateChange = (text) => {
+    let cleaned = text.replace(/[^\d]/g, '');
+    
+    if (cleaned.length > 8) {
+      cleaned = cleaned.substring(0, 8);
+    }
+    
+    if (cleaned.length <= 2) {
+      setDateOfBirth(cleaned);
+    } else if (cleaned.length <= 4) {
+      setDateOfBirth(cleaned.substring(0, 2) + '/' + cleaned.substring(2));
+    } else {
+      setDateOfBirth(
+        cleaned.substring(0, 2) + 
+        '/' + cleaned.substring(2, 4) + 
+        '/' + cleaned.substring(4, 8)
+      );
     }
   };
 
@@ -141,12 +180,13 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           />
           <TextInput
             style={styles.input}
-            placeholder="john.doe@gmail.com"
+            placeholder="john.doe@example.com"
             placeholderTextColor="#809CFF"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
           />
         </View>
 
@@ -165,6 +205,7 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
+            autoComplete="new-password"
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
             <Image 
@@ -185,11 +226,12 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           />
           <TextInput
             style={styles.input}
-            placeholder="+1 234 567 8900"
+            placeholder="+1-555-1234"
             placeholderTextColor="#809CFF"
             value={mobileNumber}
             onChangeText={setMobileNumber}
             keyboardType="phone-pad"
+            autoComplete="tel"
           />
         </View>
 
@@ -206,8 +248,9 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
             placeholder="MM/DD/YYYY"
             placeholderTextColor="#809CFF"
             value={dateOfBirth}
-            onChangeText={setDateOfBirth}
+            onChangeText={handleDateChange}
             keyboardType="numbers-and-punctuation"
+            maxLength={10}
           />
         </View>
 
@@ -221,10 +264,11 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           />
           <TextInput
             style={styles.input}
-            placeholder="Male/Female/Other"
+            placeholder="Male, Female, Other"
             placeholderTextColor="#809CFF"
             value={gender}
             onChangeText={setGender}
+            autoCapitalize="words"
           />
         </View>
 
@@ -238,10 +282,11 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           />
           <TextInput
             style={styles.input}
-            placeholder="O+, A-, etc."
+            placeholder="O+, A-, B+, AB-, etc."
             placeholderTextColor="#809CFF"
             value={bloodType}
             onChangeText={setBloodType}
+            autoCapitalize="characters"
           />
         </View>
 
@@ -255,10 +300,11 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           />
           <TextInput
             style={styles.input}
-            placeholder="123 Main St, City"
+            placeholder="123 Main St, Springfield"
             placeholderTextColor="#809CFF"
             value={address}
             onChangeText={setAddress}
+            autoCapitalize="words"
           />
         </View>
 
@@ -272,10 +318,11 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           />
           <TextInput
             style={styles.input}
-            placeholder="123456789V"
+            placeholder="900515123V"
             placeholderTextColor="#809CFF"
             value={patientNic}
             onChangeText={setPatientNic}
+            autoCapitalize="characters"
           />
         </View>
 

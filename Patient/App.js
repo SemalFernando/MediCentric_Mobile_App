@@ -2,18 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
 import SplashScreen from './src/pages/SplashScreen';
 import WelcomeScreen from './src/pages/WelcomeScreen';
+import LoginScreen from './src/pages/LoginScreen';
+import SignUpScreen from './src/pages/SignUpScreen';
 import HomeScreen from './src/pages/HomeScreen';
 import ReportsScreen from './src/pages/ReportsScreen';
 import PrescriptionsScreen from './src/pages/PrescriptionsScreen';
 import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import ConsentScreen from './src/pages/ConsentScreen';
+import ProfileScreen from './src/pages/ProfileScreen';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [scannedPatient, setScannedPatient] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [patientData, setPatientData] = useState(null);
+  const [patientId, setPatientId] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,13 +33,27 @@ const App = () => {
   }
 
   // Handle navigation between screens
-  const navigateToHome = () => {
+  const navigateToHome = (patientIdFromLogin = null) => {
+    if (patientIdFromLogin) {
+      setPatientId(patientIdFromLogin);
+      console.log('Patient ID set:', patientIdFromLogin);
+    }
     setCurrentScreen('home');
   };
 
   const navigateToWelcome = () => {
     setCurrentScreen('welcome');
     setUserRole(null);
+    setPatientData(null);
+    setPatientId(null);
+  };
+
+  const navigateToLogin = () => {
+    setCurrentScreen('login');
+  };
+
+  const navigateToSignUp = () => {
+    setCurrentScreen('signup');
   };
 
   const navigateToSetPassword = () => {
@@ -47,10 +66,6 @@ const App = () => {
 
   const navigateBackFromConsent = () => {
     setCurrentScreen('setPassword');
-  };
-
-  const navigateToLogin = () => {
-    setCurrentScreen('welcome');
   };
 
   // Navigate to reports screen
@@ -80,10 +95,21 @@ const App = () => {
     setCurrentScreen('home');
   };
 
+  // Navigate to profile screen
+  const navigateToProfile = (patientIdFromHome = null) => {
+    setCurrentScreen('profile');
+  };
+
+  const navigateBackFromProfile = () => {
+    setCurrentScreen('home');
+  };
+
   // Handle logout from home screen
   const handleLogout = () => {
     setScannedPatient(null);
     setUserRole(null);
+    setPatientData(null);
+    setPatientId(null);
     setCurrentScreen('welcome');
   };
 
@@ -94,10 +120,36 @@ const App = () => {
         <HomeScreen
           onBack={navigateToWelcome}
           onLogout={handleLogout}
-          patientData={scannedPatient}
+          patientData={patientData}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
+          onNavigateToProfile={navigateToProfile}
+          route={{ params: { patientId } }}
+        />
+      );
+    case 'profile':
+      return (
+        <ProfileScreen
+          onBack={navigateBackFromProfile}
+          onLogout={handleLogout}
+          route={{ params: { patientId } }}
+        />
+      );
+    case 'login':
+      return (
+        <LoginScreen
+          onBack={navigateToWelcome}
+          onNavigateToHome={navigateToHome}
+          onNavigateToSignUp={navigateToSignUp}
+          onNavigateToSetPassword={navigateToSetPassword}
+        />
+      );
+    case 'signup':
+      return (
+        <SignUpScreen
+          onBack={navigateToWelcome}
+          onNavigateToLogin={navigateToLogin}
         />
       );
     case 'setPassword':
@@ -146,6 +198,8 @@ const App = () => {
       return (
         <WelcomeScreen
           onNavigateToHome={navigateToHome}
+          onNavigateToLogin={navigateToLogin}
+          onNavigateToSignUp={navigateToSignUp}
           onNavigateToSetPassword={navigateToSetPassword}
         />
       );

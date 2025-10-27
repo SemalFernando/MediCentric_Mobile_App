@@ -14,7 +14,7 @@ const LabReportFormScreen = ({ onBack }) => {
     const [category, setCategory] = useState('');
     const [comments, setComments] = useState('');
 
-    const baseUrl = 'http://10.185.72.247:8083';
+    const baseUrl = 'http://172.16.102.131:8083';
     const patientId = 'P1234';
 
     // Handle document upload with DocumentPicker - FIXED VERSION FOR OLDER API

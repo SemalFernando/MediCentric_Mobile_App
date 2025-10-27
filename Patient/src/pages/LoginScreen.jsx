@@ -1,10 +1,122 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 
 const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNavigateToHome }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const loginData = {
+        email: email.trim().toLowerCase(),
+        password: password
+      };
+
+      console.log('Sending login data:', loginData);
+
+      const response = await fetch('http://192.168.1.4:8080/patients/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      const responseClone = response.clone();
+      
+      if (!response.ok) {
+        let errorMessage = `Login failed with status: ${response.status}`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          try {
+            const errorText = await responseClone.text();
+            errorMessage = errorText || errorMessage;
+          } catch (textError) {
+            if (response.status === 401) {
+              errorMessage = 'Invalid email or password';
+            } else if (response.status === 404) {
+              errorMessage = 'Account not found. Please sign up first.';
+            } else if (response.status === 400) {
+              errorMessage = 'Invalid request. Please check your input.';
+            }
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        const textResponse = await response.text();
+        console.log('Non-JSON response:', textResponse);
+        responseData = {
+          id: 'temp-id',
+          email: email,
+          message: textResponse,
+          success: true
+        };
+      }
+
+      console.log('Login successful:', responseData);
+      
+      // Extract patient ID - KEY CHANGE HERE
+      const patientId = responseData.id || responseData.patientId;
+      
+      if (!patientId) {
+        throw new Error('No patient ID received from server. Please contact support.');
+      }
+
+      console.log('Extracted patient ID:', patientId);
+      
+      Alert.alert('Success', 'Login successful!', [
+        { 
+          text: 'OK', 
+          onPress: () => {
+            // Pass patient ID to home screen
+            onNavigateToHome(patientId);
+          }
+        }
+      ]);
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        Alert.alert('Connection Error', 'Cannot connect to server. Please check your connection and try again.');
+      } else if (error.message.includes('Invalid email or password') || error.message.includes('401')) {
+        Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
+      } else if (error.message.includes('Account not found') || error.message.includes('404')) {
+        Alert.alert('Account Not Found', 'No account found with this email. Please sign up first.');
+      } else if (error.message.includes('Invalid request') || error.message.includes('400')) {
+        Alert.alert('Invalid Input', 'Please check your email and password format.');
+      } else {
+        Alert.alert('Login Error', error.message || 'Failed to login. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -25,7 +137,7 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
       </Text>
 
       {/* Email Section */}
-      <Text style={styles.inputLabel}>Email or phone number</Text>
+      <Text style={styles.inputLabel}>Email</Text>
       <View style={styles.inputContainer}>
         <Image
           source={require('../assets/email-icon.png')}
@@ -34,12 +146,14 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
         />
         <TextInput
           style={styles.input}
-          placeholder="john.doe@gmail.com"
+          placeholder="john.doe@example.com"
           placeholderTextColor="#809CFF"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          autoComplete="email"
+          editable={!isLoading}
         />
       </View>
 
@@ -58,8 +172,14 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
+          autoComplete="password"
+          editable={!isLoading}
         />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+        <TouchableOpacity 
+          onPress={() => setShowPassword(!showPassword)} 
+          style={styles.eyeIcon}
+          disabled={isLoading}
+        >
           <Image
             source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')}
             style={styles.eyeIconImage}
@@ -72,16 +192,22 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
       <TouchableOpacity
         style={styles.forgotPassword}
         onPress={onNavigateToSetPassword}
+        disabled={isLoading}
       >
         <Text style={styles.forgotPasswordText}>Forgot password?</Text>
       </TouchableOpacity>
 
       {/* Login Button */}
       <TouchableOpacity
-        style={styles.loginButton}
-        onPress={onNavigateToHome} // Add this
+        style={[styles.loginButton, isLoading && styles.disabledButton]}
+        onPress={handleLogin}
+        disabled={isLoading}
       >
-        <Text style={styles.loginButtonText}>Login</Text>
+        {isLoading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.loginButtonText}>Login</Text>
+        )}
       </TouchableOpacity>
 
       {/* Divider */}
@@ -93,10 +219,10 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
 
       {/* Social Login Buttons */}
       <View style={styles.socialButtons}>
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity style={styles.socialButton} disabled={isLoading}>
           <Image source={require('../assets/google.png')} style={styles.socialIcon} resizeMode="contain" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity style={styles.socialButton} disabled={isLoading}>
           <Image source={require('../assets/facebook.png')} style={styles.socialIcon} resizeMode="contain" />
         </TouchableOpacity>
       </View>
@@ -104,8 +230,8 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
       {/* Sign Up Link */}
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={onNavigateToSignUp}>
-          <Text style={styles.signupLink}>Sign up</Text>
+        <TouchableOpacity onPress={onNavigateToSignUp} disabled={isLoading}>
+          <Text style={[styles.signupLink, isLoading && styles.disabledLink]}>Sign up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -214,6 +340,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
   },
+  disabledButton: {
+    backgroundColor: '#809CFF',
+  },
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
@@ -267,6 +396,9 @@ const styles = StyleSheet.create({
     color: '#2260FF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  disabledLink: {
+    color: '#809CFF',
   },
 });
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import LoginScreen from '../pages/LoginScreen';
-import SignUpScreen from '../pages/SignupScreen';
+import SignUpScreen from './SignUpScreen';
 import SetPasswordScreen from '../pages/SetPasswordScreen';
 
 const WelcomeScreen = ({ onNavigateToHome }) => {

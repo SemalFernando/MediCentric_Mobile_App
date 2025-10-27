@@ -1,14 +1,53 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import MedBot from '../components/MedBot';
 
-const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile, onNavigateToDiagnose }) => {
-    const [activePage, setActivePage] = useState('home'); // Track the active page
+const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile, onNavigateToDiagnose, route }) => {
+    const [activePage, setActivePage] = useState('home');
+    const [patientData, setPatientData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Get patientId from route params
+    const patientId = route.params?.patientId;
+    const BASE_URL = 'http://192.168.1.4:8080';
+
+    // Fetch patient data when component mounts
+    useEffect(() => {
+        if (patientId) {
+            fetchPatientData();
+        } else {
+            setIsLoading(false);
+            Alert.alert('Error', 'No patient ID found. Please login again.');
+        }
+    }, [patientId]);
+
+    const fetchPatientData = async () => {
+        try {
+            setIsLoading(true);
+            const response = await fetch(`${BASE_URL}/patients/${patientId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            setPatientData(data);
+        } catch (error) {
+            console.error('Error fetching patient data:', error);
+            Alert.alert('Error', 'Failed to load patient data. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleQRPress = () => {
         setActivePage('qr');
-        // Navigate to QR scanning page using the prop
         if (onNavigateToQRScanner) {
             onNavigateToQRScanner();
         }
@@ -41,8 +80,8 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     };
 
     const handleProfilePress = () => {
-        if (onNavigateToProfile) {
-            onNavigateToProfile();
+        if (onNavigateToProfile && patientId) {
+            onNavigateToProfile(patientId);
         }
     };
 
@@ -51,6 +90,21 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
             onNavigateToDiagnose();
         }
     };
+
+    if (isLoading) {
+        return (
+            <ScreenWrapper 
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Loading...</Text>
+                </View>
+            </ScreenWrapper>
+        );
+    }
 
     return (
         <ScreenWrapper
@@ -75,7 +129,9 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                             />
                             <View style={styles.welcomeText}>
                                 <Text style={styles.welcomeBack}>Welcome back!</Text>
-                                <Text style={styles.doctorName}>Dr. John Wick</Text>
+                                <Text style={styles.doctorName}>
+                                    {patientData ? patientData.fullName : 'Patient'}
+                                </Text>
                             </View>
                         </TouchableOpacity>
 
@@ -112,7 +168,9 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                             <View style={styles.leftColumn}>
                                 {/* Blood Type Card */}
                                 <View style={styles.smallCard}>
-                                    <Text style={styles.bloodTypeText}>Blood Type: O+</Text>
+                                    <Text style={styles.bloodTypeText}>
+                                        Blood Type: {patientData?.bloodType || 'Not specified'}
+                                    </Text>
                                 </View>
 
                                 {/* Allergies Card */}
@@ -282,6 +340,15 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        fontSize: 18,
+        color: '#2260FF',
+    },
     firstRow: {
         backgroundColor: '#FFFFFF',
         padding: 20,
@@ -349,10 +416,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#CAD6FF',
         padding: 20,
         flex: 1,
-        paddingBottom: 40, // Reduced bottom padding to decrease gap
+        paddingBottom: 40,
     },
     cardsContainer: {
-        marginBottom: 0, // Removed margin bottom
+        marginBottom: 0,
         alignItems: 'center',
     },
     twoColumnContainer: {
@@ -401,7 +468,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
-        marginBottom: 100, // Reduced margin bottom to decrease gap
+        marginBottom: 100,
     },
     cardTitle: {
         fontSize: 14,
@@ -479,7 +546,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#2260FF',
         borderRadius: 8,
         paddingVertical: 8,
-        paddingHorizontal: 60, // Increased width for prescriptions button only
+        paddingHorizontal: 60,
         alignSelf: 'center',
         marginTop: 1,
     },
@@ -490,9 +557,9 @@ const styles = StyleSheet.create({
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',
-        padding: 10, // Reduced padding to decrease gap
+        padding: 10,
         alignItems: 'center',
-        paddingTop: 15, // Reduced top padding
+        paddingTop: 15,
     },
     navigationCard: {
         width: 298,

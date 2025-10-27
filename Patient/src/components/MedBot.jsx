@@ -6,7 +6,7 @@ const MedBot = ({ onPress, onDiagnosePress }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [predictionResult, setPredictionResult] = useState(null);
 
-    const BASE_URL = 'http://172.16.102.245:8088';
+    const BASE_URL = 'http://192.168.1.4:8088';
 
     const handleMedBotPress = () => {
         setIsPopupVisible(true);
