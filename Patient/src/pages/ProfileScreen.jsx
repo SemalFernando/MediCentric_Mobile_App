@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const ProfileScreen = ({ route, onBack, onLogout }) => {
+const ProfileScreen = ({ route, onBack, onLogout, onNavigateToMedicalData }) => {
   const [patientData, setPatientData] = useState({
     fullName: '',
     email: '',
@@ -154,6 +154,14 @@ const ProfileScreen = ({ route, onBack, onLogout }) => {
 
   const handleLogoutCancel = () => {
     setShowLogoutPopup(false);
+  };
+
+  const handleViewMedicalInfo = () => {
+    if (onNavigateToMedicalData && patientId) {
+      onNavigateToMedicalData(patientId);
+    } else {
+      Alert.alert('Error', 'Unable to navigate to medical data form.');
+    }
   };
 
   // Fetch patient data when component mounts
@@ -350,6 +358,13 @@ const ProfileScreen = ({ route, onBack, onLogout }) => {
           </TouchableOpacity>
           
           <TouchableOpacity 
+            style={styles.medicalInfoButton}
+            onPress={handleViewMedicalInfo}
+          >
+            <Text style={styles.medicalInfoButtonText}>View Medical Info</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
             style={styles.logoutButton}
             onPress={() => setShowLogoutPopup(true)}
           >
@@ -391,8 +406,6 @@ const ProfileScreen = ({ route, onBack, onLogout }) => {
     </ScreenWrapper>
   );
 };
-
-// ... keep the same styles as before ...
 
 const styles = StyleSheet.create({
   container: {
@@ -540,6 +553,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#28a745',
   },
   updateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  medicalInfoButton: {
+    backgroundColor: '#FFA500',
+    borderRadius: 25,
+    paddingVertical: 15,
+    marginBottom: 15,
+    width: '80%',
+    alignItems: 'center',
+  },
+  medicalInfoButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',

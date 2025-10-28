@@ -12,6 +12,7 @@ import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import ConsentScreen from './src/pages/ConsentScreen';
 import ProfileScreen from './src/pages/ProfileScreen';
 import QrCodeScreen from './src/pages/QrCodeScreen';
+import MedicalDataFormScreen from './src/pages/MedicalDataFormScreen';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -125,6 +126,15 @@ const App = () => {
     setCurrentScreen('home');
   };
 
+  // Navigate to medical data form screen - FIXED
+  const navigateToMedicalData = () => {
+    setCurrentScreen('medicalData');
+  };
+
+  const navigateBackFromMedicalData = () => {
+    setCurrentScreen('profile');
+  };
+
   // Navigate from QR screen to home after registration
   const navigateFromQrToHome = () => {
     if (newPatientData && newPatientData.patientId) {
@@ -165,7 +175,16 @@ const App = () => {
         <ProfileScreen
           onBack={navigateBackFromProfile}
           onLogout={handleLogout}
+          onNavigateToMedicalData={navigateToMedicalData}
           route={{ params: { patientId, patientData } }}
+        />
+      );
+    case 'medicalData':
+      return (
+        <MedicalDataFormScreen
+          onBack={navigateBackFromMedicalData}
+          patientId={patientId}
+          route={{ params: { patientId } }} // ADDED: route params
         />
       );
     case 'login':
@@ -229,8 +248,8 @@ const App = () => {
     case 'qrCode':
       return (
         <QrCodeScreen
-          onBack={navigateBackFromQrCode}
-          patientData={newPatientData || patientData} // FIX: Use both new and existing patient data
+          onBack={newPatientData ? navigateFromQrToHome : navigateBackFromQrCode}
+          patientData={newPatientData || patientData}
           route={{ params: { 
             patientId: newPatientData?.patientId || patientId,
             patientData: newPatientData || patientData 
