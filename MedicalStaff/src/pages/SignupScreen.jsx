@@ -1,27 +1,229 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
+import { authAPI } from '../services/api';
 
-const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
+const SignUpScreen = ({ selectedRole, onBack, onNavigateToLogin, onSignUpSuccess }) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    licenseNo: '',
+    specialization: '',
+    contactInfo: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const getRoleSpecificFields = () => {
+    switch (selectedRole?.id) {
+      case 'doctor':
+        return (
+          <>
+            <Text style={styles.inputLabel}>License Number</Text>
+            <View style={styles.inputContainer}>
+              <Image
+                source={require('../assets/license-icon.png')}
+                style={styles.inputIcon}
+                resizeMode="contain"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="MD-2025-481"
+                placeholderTextColor="#809CFF"
+                value={formData.licenseNo}
+                onChangeText={(value) => handleInputChange('licenseNo', value)}
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>Specialization</Text>
+            <View style={styles.inputContainer}>
+              <Image
+                source={require('../assets/specialization-icon.png')}
+                style={styles.inputIcon}
+                resizeMode="contain"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Cardiology"
+                placeholderTextColor="#809CFF"
+                value={formData.specialization}
+                onChangeText={(value) => handleInputChange('specialization', value)}
+              />
+            </View>
+          </>
+        );
+
+      case 'radiologist':
+        return (
+          <>
+            <Text style={styles.inputLabel}>License Number</Text>
+            <View style={styles.inputContainer}>
+              <Image
+                source={require('../assets/license-icon.png')}
+                style={styles.inputIcon}
+                resizeMode="contain"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="RAD-2026-111"
+                placeholderTextColor="#809CFF"
+                value={formData.licenseNo}
+                onChangeText={(value) => handleInputChange('licenseNo', value)}
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>Contact Info</Text>
+            <View style={styles.inputContainer}>
+              <Image
+                source={require('../assets/phone-icon.png')}
+                style={styles.inputIcon}
+                resizeMode="contain"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="+1-555-6543"
+                placeholderTextColor="#809CFF"
+                value={formData.contactInfo}
+                onChangeText={(value) => handleInputChange('contactInfo', value)}
+              />
+            </View>
+          </>
+        );
+
+      case 'lab_technician':
+        return (
+          <>
+            <Text style={styles.inputLabel}>Contact Info</Text>
+            <View style={styles.inputContainer}>
+              <Image
+                source={require('../assets/phone-icon.png')}
+                style={styles.inputIcon}
+                resizeMode="contain"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="+1-555-2468"
+                placeholderTextColor="#809CFF"
+                value={formData.contactInfo}
+                onChangeText={(value) => handleInputChange('contactInfo', value)}
+              />
+            </View>
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return false;
+    }
+
+    // Role-specific validations
+    if (selectedRole?.id === 'doctor' && (!formData.licenseNo || !formData.specialization)) {
+      Alert.alert('Error', 'Please fill in license number and specialization');
+      return false;
+    }
+
+    if (selectedRole?.id === 'radiologist' && (!formData.licenseNo || !formData.contactInfo)) {
+      Alert.alert('Error', 'Please fill in license number and contact info');
+      return false;
+    }
+
+    if (selectedRole?.id === 'lab_technician' && !formData.contactInfo) {
+      Alert.alert('Error', 'Please fill in contact info');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      // Prepare data based on role
+      let userData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      };
+
+      // Add role-specific fields
+      if (selectedRole?.id === 'doctor') {
+        userData.licenseNo = formData.licenseNo;
+        userData.specialization = formData.specialization;
+      } else if (selectedRole?.id === 'radiologist') {
+        userData.licenseNo = formData.licenseNo;
+        userData.contactInfo = formData.contactInfo;
+      } else if (selectedRole?.id === 'lab_technician') {
+        userData.contactInfo = formData.contactInfo;
+      }
+
+      const response = await authAPI.signup(selectedRole.id, userData);
+
+      Alert.alert('Success', 'Account created successfully! Please login to continue.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Navigate to login screen instead of directly to home
+            onSignUpSuccess();
+          }
+        }
+      ]);
+
+    } catch (error) {
+      Alert.alert('Sign Up Failed', error.message || 'An error occurred during sign up');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getRoleDisplayName = () => {
+    switch (selectedRole?.id) {
+      case 'doctor': return 'Doctor';
+      case 'radiologist': return 'Radiologist';
+      case 'lab_technician': return 'Lab Technician';
+      default: return 'User';
+    }
+  };
 
   return (
-    <ScreenWrapper 
+    <ScreenWrapper
       backgroundColor="#FFFFFF"
       statusBarStyle="dark-content"
       barStyle="dark-content"
       translucent={false}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
           keyboardShouldPersistTaps="handled"
@@ -31,15 +233,15 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
               <Text style={styles.backText}>‹</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>New Account</Text>
+            <Text style={styles.headerTitle}>New {getRoleDisplayName()} Account</Text>
             <View style={{ width: 24 }} />
           </View>
 
           {/* Full Name Section */}
           <Text style={styles.inputLabel}>Full name</Text>
           <View style={styles.inputContainer}>
-            <Image 
-              source={require('../assets/user-icon.png')} 
+            <Image
+              source={require('../assets/user-icon.png')}
               style={styles.inputIcon}
               resizeMode="contain"
             />
@@ -47,8 +249,8 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
               style={styles.input}
               placeholder="John Doe"
               placeholderTextColor="#809CFF"
-              value={fullName}
-              onChangeText={setFullName}
+              value={formData.fullName}
+              onChangeText={(value) => handleInputChange('fullName', value)}
               autoCapitalize="words"
             />
           </View>
@@ -56,8 +258,8 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           {/* Email Section */}
           <Text style={styles.inputLabel}>Email</Text>
           <View style={styles.inputContainer}>
-            <Image 
-              source={require('../assets/email-icon.png')} 
+            <Image
+              source={require('../assets/email-icon.png')}
               style={styles.inputIcon}
               resizeMode="contain"
             />
@@ -65,18 +267,21 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
               style={styles.input}
               placeholder="john.doe@gmail.com"
               placeholderTextColor="#809CFF"
-              value={email}
-              onChangeText={setEmail}
+              value={formData.email}
+              onChangeText={(value) => handleInputChange('email', value)}
               keyboardType="email-address"
               autoCapitalize="none"
             />
           </View>
 
+          {/* Role-specific fields */}
+          {getRoleSpecificFields()}
+
           {/* Password Section */}
           <Text style={styles.inputLabel}>Password</Text>
           <View style={styles.inputContainer}>
-            <Image 
-              source={require('../assets/password-icon.png')} 
+            <Image
+              source={require('../assets/password-icon.png')}
               style={styles.inputIcon}
               resizeMode="contain"
             />
@@ -84,52 +289,34 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
               style={styles.input}
               placeholder="****************"
               placeholderTextColor="#809CFF"
-              value={password}
-              onChangeText={setPassword}
+              value={formData.password}
+              onChangeText={(value) => handleInputChange('password', value)}
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-              <Image 
-                source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')} 
+              <Image
+                source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')}
                 style={styles.eyeIconImage}
                 resizeMode="contain"
               />
             </TouchableOpacity>
           </View>
 
-          {/* Mobile Number Section */}
-          <Text style={styles.inputLabel}>Mobile number</Text>
+          {/* Confirm Password Section */}
+          <Text style={styles.inputLabel}>Confirm Password</Text>
           <View style={styles.inputContainer}>
-            <Image 
-              source={require('../assets/phone-icon.png')} 
+            <Image
+              source={require('../assets/password-icon.png')}
               style={styles.inputIcon}
               resizeMode="contain"
             />
             <TextInput
               style={styles.input}
-              placeholder="+1 234 567 8900"
+              placeholder="****************"
               placeholderTextColor="#809CFF"
-              value={mobileNumber}
-              onChangeText={setMobileNumber}
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          {/* Date of Birth Section */}
-          <Text style={styles.inputLabel}>Date of birth</Text>
-          <View style={styles.inputContainer}>
-            <Image 
-              source={require('../assets/dob-icon.png')} 
-              style={styles.inputIcon}
-              resizeMode="contain"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#809CFF"
-              value={dateOfBirth}
-              onChangeText={setDateOfBirth}
-              keyboardType="numbers-and-punctuation"
+              value={formData.confirmPassword}
+              onChangeText={(value) => handleInputChange('confirmPassword', value)}
+              secureTextEntry={!showPassword}
             />
           </View>
 
@@ -139,8 +326,16 @@ const SignUpScreen = ({ onBack, onNavigateToLogin }) => {
           </Text>
 
           {/* Sign Up Button */}
-          <TouchableOpacity style={styles.signupButton}>
-            <Text style={styles.signupButtonText}>Sign Up</Text>
+          <TouchableOpacity
+            style={[styles.signupButton, isLoading && styles.signupButtonDisabled]}
+            onPress={handleSignUp}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.signupButtonText}>Sign Up</Text>
+            )}
           </TouchableOpacity>
 
           {/* Divider */}
@@ -261,6 +456,9 @@ const styles = StyleSheet.create({
     width: '60%',
     alignItems: 'center',
     alignSelf: 'center',
+  },
+  signupButtonDisabled: {
+    backgroundColor: '#CAD6FF',
   },
   signupButtonText: {
     color: '#FFFFFF',

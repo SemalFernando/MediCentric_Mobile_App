@@ -13,6 +13,17 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
   const [selectedRole, setSelectedRole] = useState(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
 
+  // Enhanced login handler that navigates based on role
+  const handleLoginSuccess = () => {
+    if (selectedRole?.id === 'doctor') {
+      onNavigateToHome();
+    } else if (selectedRole?.id === 'radiologist') {
+      onNavigateToScanReport();
+    } else if (selectedRole?.id === 'lab_technician') {
+      onNavigateToLabReport();
+    }
+  };
+
   if (showLogin) {
     return <LoginScreen
       selectedRole={selectedRole}
@@ -30,10 +41,11 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
         setShowSetPassword(true);
         setPreviousScreen('login');
       }}
-      onNavigateToHome={onNavigateToHome}
+      onNavigateToHome={handleLoginSuccess} // Use the enhanced handler
     />;
   }
 
+  // In your WelcomeScreen, find the SignUpScreen section and make sure it looks like this:
   if (showSignUp) {
     return <SignUpScreen
       selectedRole={selectedRole}
@@ -44,6 +56,12 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
         }
       }}
       onNavigateToLogin={() => {
+        setShowSignUp(false);
+        setShowLogin(true);
+        setPreviousScreen('signup');
+      }}
+      onSignUpSuccess={() => {
+        // After successful signup, go to login screen - NOT directly to home
         setShowSignUp(false);
         setShowLogin(true);
         setPreviousScreen('signup');
@@ -61,7 +79,7 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
       }}
       onLogin={() => {
         setShowSetPassword(false);
-        setShowLogin(true); // This navigates back to login
+        setShowLogin(true);
       }}
     />;
   }
@@ -75,14 +93,6 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
     setShowRoleModal(false);
-    
-    // Direct navigation based on role
-    if (role.id === 'lab_technician') {
-      onNavigateToLabReport();
-    } else if (role.id === 'radiologist') {
-      onNavigateToScanReport();
-    }
-    // Doctor will stay on welcome screen for login/signup
   };
 
   const RoleButton = ({ role, onPress }) => (
@@ -97,7 +107,7 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
   );
 
   return (
-    <ScreenWrapper 
+    <ScreenWrapper
       backgroundColor="#FFFFFF"
       statusBarStyle="dark-content"
       barStyle="dark-content"
@@ -127,8 +137,8 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
           </Text>
         </TouchableOpacity>
 
-        {/* Show auth buttons only for Doctor role */}
-        {selectedRole && selectedRole.id === 'doctor' && (
+        {/* Show auth buttons for ALL roles */}
+        {selectedRole && (
           <View style={styles.authButtonsContainer}>
             <TouchableOpacity
               style={styles.loginButton}
@@ -149,27 +159,16 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
             >
               <Text style={styles.signupButtonText}>SignUp as {selectedRole.label}</Text>
             </TouchableOpacity>
-          </View>
-        )}
 
-        {/* Show direct access message for Lab Technician and Radiologist */}
-        {(selectedRole?.id === 'lab_technician' || selectedRole?.id === 'radiologist') && (
-          <View style={styles.directAccessContainer}>
-            <Text style={styles.directAccessText}>
-              {selectedRole.label} access granted. You can now use the {selectedRole.id === 'lab_technician' ? 'Lab Report' : 'Scan Report'} features.
+            {/* Role-specific description */}
+            <Text style={styles.roleDescription}>
+              {selectedRole.id === 'doctor'
+                ? 'Access patient records, diagnostics, and collaboration tools'
+                : selectedRole.id === 'radiologist'
+                  ? 'Access and manage scan reports and imaging data'
+                  : 'Access and manage laboratory test results and reports'
+              }
             </Text>
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={() => {
-                if (selectedRole.id === 'lab_technician') {
-                  onNavigateToLabReport();
-                } else if (selectedRole.id === 'radiologist') {
-                  onNavigateToScanReport();
-                }
-              }}
-            >
-              <Text style={styles.continueButtonText}>Continue as {selectedRole.label}</Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -290,36 +289,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     width: '100%',
     alignItems: 'center',
+    marginBottom: 15,
   },
   signupButtonText: {
     color: '#2260FF',
     fontSize: 15,
     fontWeight: '600',
   },
-  directAccessContainer: {
-    width: '80%',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  directAccessText: {
-    fontSize: 14,
-    color: '#2260FF',
+  roleDescription: {
+    fontSize: 12,
+    color: '#666',
     textAlign: 'center',
-    marginBottom: 15,
-    lineHeight: 20,
-  },
-  continueButton: {
-    backgroundColor: '#2260FF',
-    borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    width: '100%',
-    alignItems: 'center',
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    lineHeight: 16,
+    fontStyle: 'italic',
   },
   modalContainer: {
     flex: 1,

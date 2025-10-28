@@ -1,14 +1,78 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
+import { authAPI } from '../services/api';
 
-const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNavigateToHome }) => {
+const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSetPassword, onNavigateToHome }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      console.log('Attempting login for role:', selectedRole?.id);
+      console.log('Email:', email);
+
+      const response = await authAPI.login(selectedRole.id, email, password);
+
+      console.log('Login successful:', response);
+
+      // Successful login - now navigate to respective page
+      Alert.alert('Success', `Welcome back!`, [
+        {
+          text: 'OK',
+          onPress: () => {
+            onNavigateToHome(); // This should navigate to the respective page based on role
+          }
+        }
+      ]);
+
+    } catch (error) {
+      console.error('Login error details:', error);
+
+      let errorMessage = error.message || 'Login failed';
+
+      // Provide more specific error messages
+      if (errorMessage.includes('Network request failed')) {
+        errorMessage = 'Cannot connect to server. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('Failed to fetch')) {
+        errorMessage = 'Server connection failed. Please try again later.';
+      } else if (errorMessage.includes('Invalid email or password')) {
+        errorMessage = 'Invalid email or password. Please try again.';
+      }
+
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getRoleDisplayName = () => {
+    switch (selectedRole?.id) {
+      case 'doctor': return 'Doctor';
+      case 'radiologist': return 'Radiologist';
+      case 'lab_technician': return 'Lab Technician';
+      default: return 'User';
+    }
+  };
 
   return (
-    <ScreenWrapper 
+    <ScreenWrapper
       backgroundColor="#FFFFFF"
       statusBarStyle="dark-content"
       barStyle="dark-content"
@@ -20,7 +84,7 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backText}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Log In</Text>
+          <Text style={styles.headerTitle}>Log In as {getRoleDisplayName()}</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -32,7 +96,7 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
         </Text>
 
         {/* Email Section */}
-        <Text style={styles.inputLabel}>Email or phone number</Text>
+        <Text style={styles.inputLabel}>Email</Text>
         <View style={styles.inputContainer}>
           <Image
             source={require('../assets/email-icon.png')}
@@ -85,10 +149,15 @@ const LoginScreen = ({ onBack, onNavigateToSignUp, onNavigateToSetPassword, onNa
 
         {/* Login Button */}
         <TouchableOpacity
-          style={styles.loginButton}
-          onPress={onNavigateToHome} // Add this
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading}
         >
-          <Text style={styles.loginButtonText}>Login</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.loginButtonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         {/* Divider */}
@@ -221,6 +290,9 @@ const styles = StyleSheet.create({
     width: '60%',
     alignItems: 'center',
     alignSelf: 'center',
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#CAD6FF',
   },
   loginButtonText: {
     color: '#FFFFFF',

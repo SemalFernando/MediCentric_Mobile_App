@@ -2,7 +2,7 @@ import React, { useState, useCallback, memo } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, Modal, Platform } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-// Memoized Custom Date Picker Component
+// Memoized Custom Date Picker Component (keep the same as before)
 const CustomDatePicker = memo(({ visible, selectedDate, onDateSelect, onCancel }) => {
   const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
 
@@ -209,7 +209,8 @@ const PrescriptionFormScreen = ({
     const [tempDate, setTempDate] = useState('');
     const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
 
-    const baseUrl = 'http://10.239.134.247:8080';
+    // UPDATED: Changed baseUrl to use your IP and port 8089
+    const baseUrl = 'http://192.168.1.4:8089';
     const patientId = 'P1234';
 
     // Format date for display
@@ -247,6 +248,11 @@ const PrescriptionFormScreen = ({
         }
         
         return parsedDate;
+    }, []);
+
+    // Convert date to timestamp for backend
+    const dateToTimestamp = useCallback((date) => {
+        return date.getTime();
     }, []);
 
     // Handle manual date input
@@ -345,13 +351,16 @@ const PrescriptionFormScreen = ({
         try {
             setLoading(true);
             
+            // UPDATED: Changed to match your backend API structure
             const prescriptionData = {
-                doctorId: "D789",
-                category: "CHRONIC",
+                doctorId: "dr_123", // Using the same doctorId from your Postman tests
+                nextReviewDate: dateToTimestamp(finalReviewDate), // Convert to timestamp
+                category: "Antibiotics", // Using category from your Postman tests
                 notes: medicationList.trim()
             };
 
             console.log('Sending prescription data:', prescriptionData);
+            console.log('URL:', `${baseUrl}/patients/${patientId}/prescriptions`);
 
             const response = await fetch(`${baseUrl}/patients/${patientId}/prescriptions`, {
                 method: 'POST',
@@ -363,6 +372,7 @@ const PrescriptionFormScreen = ({
 
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error('Backend error response:', errorText);
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
@@ -488,6 +498,7 @@ const PrescriptionFormScreen = ({
     );
 };
 
+// Keep all your existing styles the same
 const styles = StyleSheet.create({
     container: {
         flex: 1,
