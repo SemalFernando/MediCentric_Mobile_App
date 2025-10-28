@@ -1,21 +1,117 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const ProfileScreen = ({ onBack, onLogout }) => {
-  const [fullName, setFullName] = useState('John Wick');
-  const [email, setEmail] = useState('john.wick@gmail.com');
-  const [mobileNumber, setMobileNumber] = useState('+1 234 567 8900');
-  const [dateOfBirth, setDateOfBirth] = useState('03/15/1985');
+const DoctorProfileScreen = ({ route, onBack, onLogout }) => {
+  const [doctorData, setDoctorData] = useState({
+    fullName: '',
+    email: '',
+    contactInfo: '',
+    licenseNo: '',
+    specialization: ''
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Get doctorId from navigation params
+  const doctorId = route.params?.doctorId;
+  const BASE_URL = 'http://192.168.1.4:8085';
+
+  // Fetch doctor data from backend
+  const fetchDoctorData = async () => {
+    if (!doctorId) {
+      Alert.alert('Error', 'No doctor ID provided');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${BASE_URL}/doctors/${doctorId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Raw doctor data:', data);
+      
+      setDoctorData({
+        fullName: data.fullName || 'Doctor',
+        email: data.email || '',
+        contactInfo: data.contactInfo || '',
+        licenseNo: data.licenseNo || '',
+        specialization: data.specialization || ''
+      });
+    } catch (error) {
+      console.error('Error fetching doctor data:', error);
+      Alert.alert('Error', 'Failed to load profile data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update doctor data
+  const updateDoctorData = async () => {
+    if (!doctorId) {
+      Alert.alert('Error', 'No doctor ID provided');
+      return;
+    }
+
+    try {
+      const updateData = {
+        email: doctorData.email,
+        contactInfo: doctorData.contactInfo,
+        licenseNo: doctorData.licenseNo,
+        specialization: doctorData.specialization
+      };
+
+      const response = await fetch(`${BASE_URL}/doctors/${doctorId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedData = await response.json();
+      
+      setDoctorData(prev => ({
+        ...prev,
+        fullName: updatedData.fullName || prev.fullName,
+        email: updatedData.email || prev.email,
+        contactInfo: updatedData.contactInfo || prev.contactInfo,
+        licenseNo: updatedData.licenseNo || prev.licenseNo,
+        specialization: updatedData.specialization || prev.specialization
+      }));
+
+      Alert.alert('Success', 'Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating doctor data:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
+  };
 
   const handleUpdateProfile = () => {
     if (isEditing) {
-      // Save changes
-      Alert.alert('Success', 'Profile updated successfully!');
+      if (!doctorData.email) {
+        Alert.alert('Error', 'Email is a required field.');
+        return;
+      }
+      updateDoctorData();
+    } else {
+      setIsEditing(true);
     }
-    setIsEditing(!isEditing);
   };
 
   const handleLogoutConfirm = () => {
@@ -26,6 +122,47 @@ const ProfileScreen = ({ onBack, onLogout }) => {
   const handleLogoutCancel = () => {
     setShowLogoutPopup(false);
   };
+
+  // Fetch doctor data when component mounts
+  useEffect(() => {
+    if (doctorId) {
+      fetchDoctorData();
+    }
+  }, [doctorId]);
+
+  if (isLoading) {
+    return (
+      <ScreenWrapper 
+        backgroundColor="#FFFFFF"
+        statusBarStyle="dark-content"
+        barStyle="dark-content"
+        translucent={false}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2260FF" />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  if (!doctorId) {
+    return (
+      <ScreenWrapper 
+        backgroundColor="#FFFFFF"
+        statusBarStyle="dark-content"
+        barStyle="dark-content"
+        translucent={false}
+      >
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>No doctor ID provided</Text>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper 
@@ -43,7 +180,7 @@ const ProfileScreen = ({ onBack, onLogout }) => {
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backText}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>Doctor Profile</Text>
           <TouchableOpacity style={styles.settingsButton}>
             <Image 
               source={require('../assets/settings-icon.png')} 
@@ -69,30 +206,12 @@ const ProfileScreen = ({ onBack, onLogout }) => {
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>{fullName}</Text>
+          <Text style={styles.userName}>{doctorData.fullName}</Text>
+          {/* REMOVED: Specialization display under the name */}
         </View>
 
         {/* Profile Form Section */}
         <View style={styles.formSection}>
-          {/* Full Name Section */}
-          <Text style={styles.inputLabel}>Full name</Text>
-          <View style={styles.inputContainer}>
-            <Image 
-              source={require('../assets/user-icon.png')} 
-              style={styles.inputIcon}
-              resizeMode="contain"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="John Doe"
-              placeholderTextColor="#809CFF"
-              value={fullName}
-              onChangeText={setFullName}
-              autoCapitalize="words"
-              editable={isEditing}
-            />
-          </View>
-
           {/* Email Section */}
           <Text style={styles.inputLabel}>Email</Text>
           <View style={styles.inputContainer}>
@@ -105,8 +224,8 @@ const ProfileScreen = ({ onBack, onLogout }) => {
               style={styles.input}
               placeholder="john.doe@gmail.com"
               placeholderTextColor="#809CFF"
-              value={email}
-              onChangeText={setEmail}
+              value={doctorData.email}
+              onChangeText={(text) => setDoctorData(prev => ({ ...prev, email: text }))}
               keyboardType="email-address"
               autoCapitalize="none"
               editable={isEditing}
@@ -125,28 +244,45 @@ const ProfileScreen = ({ onBack, onLogout }) => {
               style={styles.input}
               placeholder="+1 234 567 8900"
               placeholderTextColor="#809CFF"
-              value={mobileNumber}
-              onChangeText={setMobileNumber}
+              value={doctorData.contactInfo}
+              onChangeText={(text) => setDoctorData(prev => ({ ...prev, contactInfo: text }))}
               keyboardType="phone-pad"
               editable={isEditing}
             />
           </View>
 
-          {/* Date of Birth Section */}
-          <Text style={styles.inputLabel}>Date of birth</Text>
+          {/* License Number Section */}
+          <Text style={styles.inputLabel}>License Number</Text>
           <View style={styles.inputContainer}>
             <Image 
-              source={require('../assets/dob-icon.png')} 
+              source={require('../assets/license-icon.png')} 
               style={styles.inputIcon}
               resizeMode="contain"
             />
             <TextInput
               style={styles.input}
-              placeholder="MM/DD/YYYY"
+              placeholder="MD-2025-481"
               placeholderTextColor="#809CFF"
-              value={dateOfBirth}
-              onChangeText={setDateOfBirth}
-              keyboardType="numbers-and-punctuation"
+              value={doctorData.licenseNo}
+              onChangeText={(text) => setDoctorData(prev => ({ ...prev, licenseNo: text }))}
+              editable={isEditing}
+            />
+          </View>
+
+          {/* Specialization Section - Still keeping the field for editing */}
+          <Text style={styles.inputLabel}>Specialization</Text>
+          <View style={styles.inputContainer}>
+            <Image 
+              source={require('../assets/specialization-icon.png')} 
+              style={styles.inputIcon}
+              resizeMode="contain"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Cardiology"
+              placeholderTextColor="#809CFF"
+              value={doctorData.specialization}
+              onChangeText={(text) => setDoctorData(prev => ({ ...prev, specialization: text }))}
               editable={isEditing}
             />
           </View>
@@ -211,6 +347,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#2260FF',
+    marginBottom: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#DC3545',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#2260FF',
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
@@ -280,6 +438,7 @@ const styles = StyleSheet.create({
     color: '#2260FF',
     textAlign: 'center',
   },
+  // REMOVED: specialization style since we're not displaying it under the name
   formSection: {
     marginBottom: 10,
   },
@@ -327,7 +486,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButton: {
-    backgroundColor: '#28a745', // Green color for save
+    backgroundColor: '#28a745',
   },
   updateButtonText: {
     color: '#FFFFFF',
@@ -346,15 +505,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  // Popup Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: '#2260FF8A', // #2260FF with 54% opacity (8A = 54%)
+    backgroundColor: '#2260FF8A',
     justifyContent: 'flex-end',
   },
   popupContainer: {
     backgroundColor: '#FFFFFF',
-    width: '100%', // Full width
+    width: '100%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
@@ -381,11 +539,10 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#CAD6FF', // CAD6FF background color
-    borderRadius: 50, // 50 radius
+    backgroundColor: '#CAD6FF',
+    borderRadius: 50,
     paddingVertical: 14,
     alignItems: 'center',
-    // No border
   },
   cancelButtonText: {
     fontSize: 16,
@@ -395,7 +552,7 @@ const styles = StyleSheet.create({
   confirmButton: {
     flex: 1,
     backgroundColor: '#DC3545',
-    borderRadius: 50, // Also 50 radius for consistency
+    borderRadius: 50,
     paddingVertical: 14,
     alignItems: 'center',
   },
@@ -406,4 +563,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+export default DoctorProfileScreen;

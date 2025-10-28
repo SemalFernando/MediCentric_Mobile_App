@@ -15,7 +15,6 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
@@ -32,22 +31,21 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
 
       console.log('Login successful:', response);
 
-      // Successful login - now navigate to respective page
-      Alert.alert('Success', `Welcome back!`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            onNavigateToHome(); // This should navigate to the respective page based on role
-          }
-        }
-      ]);
+      // For doctors, pass the full response data to home screen
+      if (selectedRole?.id === 'doctor') {
+        console.log('Passing doctor data to home:', response);
+        // Navigate immediately without alert for smoother flow
+        onNavigateToHome(response);
+      } else {
+        // For other roles, navigate without passing data
+        onNavigateToHome();
+      }
 
     } catch (error) {
       console.error('Login error details:', error);
 
       let errorMessage = error.message || 'Login failed';
 
-      // Provide more specific error messages
       if (errorMessage.includes('Network request failed')) {
         errorMessage = 'Cannot connect to server. Please check your internet connection and try again.';
       } else if (errorMessage.includes('Failed to fetch')) {
@@ -111,6 +109,7 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!isLoading}
           />
         </View>
 
@@ -129,8 +128,13 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
+            editable={!isLoading}
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+          <TouchableOpacity 
+            onPress={() => setShowPassword(!showPassword)} 
+            style={styles.eyeIcon}
+            disabled={isLoading}
+          >
             <Image
               source={showPassword ? require('../assets/eye-open-icon.png') : require('../assets/eye-closed-icon.png')}
               style={styles.eyeIconImage}
@@ -143,6 +147,7 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
         <TouchableOpacity
           style={styles.forgotPassword}
           onPress={onNavigateToSetPassword}
+          disabled={isLoading}
         >
           <Text style={styles.forgotPasswordText}>Forgot password?</Text>
         </TouchableOpacity>
@@ -169,10 +174,10 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
 
         {/* Social Login Buttons */}
         <View style={styles.socialButtons}>
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={styles.socialButton} disabled={isLoading}>
             <Image source={require('../assets/google.png')} style={styles.socialIcon} resizeMode="contain" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={styles.socialButton} disabled={isLoading}>
             <Image source={require('../assets/facebook.png')} style={styles.socialIcon} resizeMode="contain" />
           </TouchableOpacity>
         </View>
@@ -180,8 +185,8 @@ const LoginScreen = ({ selectedRole, onBack, onNavigateToSignUp, onNavigateToSet
         {/* Sign Up Link */}
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={onNavigateToSignUp}>
-            <Text style={styles.signupLink}>Sign up</Text>
+          <TouchableOpacity onPress={onNavigateToSignUp} disabled={isLoading}>
+            <Text style={[styles.signupLink, isLoading && styles.disabledLink]}>Sign up</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -347,6 +352,9 @@ const styles = StyleSheet.create({
     color: '#2260FF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  disabledLink: {
+    color: '#809CFF',
   },
 });
 

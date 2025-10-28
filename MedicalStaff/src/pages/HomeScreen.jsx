@@ -1,13 +1,51 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavigateToPrescriptions, onNavigateToAllergies, onNavigateToPrescriptionForm, onNavigateToProfile }) => {
-    const [activePage, setActivePage] = useState('home'); // Track the active page
+const HomeScreen = ({ 
+  onBack, 
+  onNavigateToQRScanner, 
+  onNavigateToReports, 
+  onNavigateToPrescriptions, 
+  onNavigateToAllergies, 
+  onNavigateToPrescriptionForm, 
+  onNavigateToProfile,
+  route,
+  doctorData: propDoctorData // Receive doctor data as direct prop
+}) => {
+    const [activePage, setActivePage] = useState('home');
+    const [doctorData, setDoctorData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Get doctor data from props or route params
+    const doctorDataFromRoute = route?.params?.doctorData;
+    const BASE_URL = 'http://192.168.1.4:8085';
+
+    // Use doctor data from props first, then from route
+    const actualDoctorData = propDoctorData || doctorDataFromRoute;
+
+    useEffect(() => {
+        console.log('HomeScreen - Received doctor data:', actualDoctorData);
+        console.log('Route params:', route?.params);
+        
+        if (actualDoctorData) {
+            console.log('Setting doctor data in state:', actualDoctorData);
+            setDoctorData(actualDoctorData);
+            setIsLoading(false);
+        } else {
+            console.log('No doctor data received, using fallback');
+            setIsLoading(false);
+            // Fallback data for demo
+            setDoctorData({
+                fullName: 'Dr. John Wick',
+                specialization: 'Cardiology', // Keep the field but don't display it
+                licenseNo: 'MD-2025-481'
+            });
+        }
+    }, [actualDoctorData]);
 
     const handleQRPress = () => {
         setActivePage('qr');
-        // Navigate to QR scanning page using the prop
         if (onNavigateToQRScanner) {
             onNavigateToQRScanner();
         }
@@ -40,10 +78,30 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     };
 
     const handleProfilePress = () => {
-        if (onNavigateToProfile) {
+        if (onNavigateToProfile && doctorData?.doctorId) {
+            console.log('Navigating to profile with doctorId:', doctorData.doctorId);
+            onNavigateToProfile(doctorData.doctorId);
+        } else if (onNavigateToProfile) {
+            console.log('Navigating to profile without doctorId');
             onNavigateToProfile();
         }
     };
+
+    if (isLoading) {
+        return (
+            <ScreenWrapper
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2260FF" />
+                    <Text style={styles.loadingText}>Loading...</Text>
+                </View>
+            </ScreenWrapper>
+        );
+    }
 
     return (
         <ScreenWrapper
@@ -68,7 +126,10 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
                             />
                             <View style={styles.welcomeText}>
                                 <Text style={styles.welcomeBack}>Welcome back!</Text>
-                                <Text style={styles.doctorName}>Dr. John Wick</Text>
+                                <Text style={styles.doctorName}>
+                                    {doctorData ? doctorData.fullName : 'Doctor'}
+                                </Text>
+                                {/* REMOVED: Specialization display under the name */}
                             </View>
                         </TouchableOpacity>
 
@@ -285,6 +346,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    loadingText: {
+        fontSize: 18,
+        color: '#2260FF',
+        marginTop: 10,
+    },
     firstRow: {
         backgroundColor: '#FFFFFF',
         padding: 20,
@@ -323,6 +395,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: 'black',
     },
+    // REMOVED: specialization style since we're not displaying it anymore
     iconsSection: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
@@ -352,10 +425,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#CAD6FF',
         padding: 20,
         flex: 1,
-        paddingBottom: 5, // Reduced bottom padding to decrease gap
+        paddingBottom: 5,
     },
     cardsContainer: {
-        marginBottom: 0, // Removed margin bottom
+        marginBottom: 0,
         alignItems: 'center',
     },
     patientCard: {
@@ -431,7 +504,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 15,
-        marginBottom: 6, // Reduced margin bottom to decrease gap
+        marginBottom: 6,
     },
     cardTitle: {
         fontSize: 14,
@@ -509,7 +582,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#2260FF',
         borderRadius: 8,
         paddingVertical: 8,
-        paddingHorizontal: 60, // Increased width for prescriptions button only
+        paddingHorizontal: 60,
         alignSelf: 'center',
         marginTop: 1,
     },
@@ -520,9 +593,9 @@ const styles = StyleSheet.create({
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',
-        padding: 10, // Reduced padding to decrease gap
+        padding: 10,
         alignItems: 'center',
-        paddingTop: 10, // Reduced top padding
+        paddingTop: 10,
     },
     navigationCard: {
         width: 298,

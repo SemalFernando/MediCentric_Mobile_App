@@ -1,86 +1,57 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Image, Text, Modal, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 
-const MedBot = ({ onPress, onDiagnosePress }) => {
+const MedBot = ({ patientId, onPress, onDiagnosePress }) => {
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [predictionResult, setPredictionResult] = useState(null);
 
-    const BASE_URL = 'http://192.168.1.4:8088';
+    const BASE_URL = 'http://10.185.72.247:8088';  // Update to your medbot URL/port
 
     const handleMedBotPress = () => {
+        console.log('MedBot pressed - Patient ID:', patientId); // Debug log
         setIsPopupVisible(true);
-        setPredictionResult(null); // Reset previous results
+        setPredictionResult(null);
         if (onPress) {
             onPress();
         }
     };
 
     const handleDiagnosePress = async () => {
+        console.log('Diagnose pressed - Patient ID:', patientId); // Debug log
+        
+        if (!patientId) {
+            Alert.alert('Error', 'No patient ID available. Please log in.');
+            return;
+        }
+        
         setIsLoading(true);
         try {
-            // First, check if the service is healthy
-            const healthResponse = await fetch(`${BASE_URL}/api/health`);
-
-            if (!healthResponse.ok) {
-                throw new Error('Service is not healthy');
+            console.log('Making prediction request for patient:', patientId);
+            const response = await fetch(`${BASE_URL}/api/predict?patientId=${patientId}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('No health records found. Please complete the health form with a medical professional first.');
+                }
+                throw new Error(`Prediction request failed with status: ${response.status}`);
             }
-
-            // Prepare the patient data (using your high-risk example)
-            const patientData = {
-                "age": 65,
-                "thalach": 100,
-                "oldpeak": 3.5,
-                "trestbps": 150,
-                "bmi": 30,
-                "chol": 280,
-                "ca": 2,
-                "thal": 3,
-                "restecg": 1,
-                "cp": 2
-            };
-
-            // const patientData = {
-            //     "age": 40,
-            //     "thalach": 160,
-            //     "oldpeak": 0.5,
-            //     "trestbps": 120,
-            //     "bmi": 22,
-            //     "chol": 180,
-            //     "ca": 0,
-            //     "thal": 6,
-            //     "restecg": 0,
-            //     "cp": 1
-            // };
-
-            // Make the prediction request
-            const predictionResponse = await fetch(`${BASE_URL}/api/predict`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(patientData)
-            });
-
-            if (!predictionResponse.ok) {
-                throw new Error('Prediction request failed');
-            }
-
-            const result = await predictionResponse.json();
+            
+            const result = await response.json();
+            console.log('Prediction result:', result);
             setPredictionResult(result);
 
             // Call the onDiagnosePress callback with the result
             if (onDiagnosePress) {
                 onDiagnosePress(result);
             }
-
         } catch (error) {
             console.error('Diagnosis error:', error);
-            Alert.alert(
-                'Diagnosis Error',
-                `Unable to connect to diagnosis service: ${error.message}`,
-                [{ text: 'OK' }]
-            );
+            if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+                Alert.alert('Connection Error', 'Cannot connect to MedBot service. Please check if the service is running.');
+            } else {
+                Alert.alert('Diagnosis Error', error.message);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -94,25 +65,17 @@ const MedBot = ({ onPress, onDiagnosePress }) => {
     const renderResult = () => {
         if (!predictionResult) return null;
 
-        // Using your actual backend response format
         const isHighRisk = predictionResult.risk === 1;
-        const probability = predictionResult.probability ? (predictionResult.probability * 100).toFixed(1) : 'N/A';
+        const probability = (predictionResult.probability * 100).toFixed(1);
         const explanation = predictionResult.explanation || 'No explanation provided.';
 
         return (
             <View style={styles.resultContainer}>
                 <Text style={styles.resultTitle}>Diagnosis Result:</Text>
-                <View style={[
-                    styles.riskIndicator,
-                    isHighRisk ? styles.highRisk : styles.lowRisk
-                ]}>
-                    <Text style={styles.riskText}>
-                        {isHighRisk ? 'HIGH RISK' : 'LOW RISK'}
-                    </Text>
+                <View style={[styles.riskIndicator, isHighRisk ? styles.highRisk : styles.lowRisk]}>
+                    <Text style={styles.riskText}>{isHighRisk ? 'HIGH RISK' : 'LOW RISK'}</Text>
                 </View>
-                <Text style={styles.probabilityText}>
-                    Confidence: {probability}%
-                </Text>
+                <Text style={styles.probabilityText}>Confidence: {probability}%</Text>
                 <View style={styles.explanationContainer}>
                     <Text style={styles.explanationTitle}>Key Factors:</Text>
                     <Text style={styles.explanationText}>{explanation}</Text>
@@ -187,40 +150,43 @@ const MedBot = ({ onPress, onDiagnosePress }) => {
                                     </View>
                                 </View>
                                 <View style={styles.popupTextContainer}>
-                                    <Text style={styles.popupTitle}>Hey!, I'm your Medi Bot...</Text>
-                                    <Text style={styles.popupSubtitle}>Would you like me to:</Text>
+                                    <Text style={styles.popupTitle}>Hey! I'm your Med Bot</Text>
+                                    <Text style={styles.popupSubtitle}>Ready to check your heart health?</Text>
                                 </View>
                             </View>
 
-                            {/* Loading Indicator */}
-                            {isLoading && (
+                            {isLoading ? (
                                 <View style={styles.loadingContainer}>
                                     <ActivityIndicator size="large" color="#2260FF" />
-                                    <Text style={styles.loadingText}>Analyzing patient data...</Text>
+                                    <Text style={styles.loadingText}>Analyzing your health data...</Text>
                                 </View>
-                            )}
-
-                            {/* Diagnosis Result */}
-                            {renderResult()}
-
-                            {/* Diagnose Button - Hidden when loading or when result is shown */}
-                            {!isLoading && !predictionResult && (
-                                <TouchableOpacity
-                                    style={styles.diagnoseButton}
-                                    onPress={handleDiagnosePress}
-                                >
-                                    <Text style={styles.diagnoseButtonText}>Diagnose Patient Illnesses</Text>
-                                </TouchableOpacity>
-                            )}
-
-                            {/* New Diagnosis Button - Show when result is available */}
-                            {predictionResult && (
-                                <TouchableOpacity
-                                    style={styles.newDiagnosisButton}
-                                    onPress={() => setPredictionResult(null)}
-                                >
-                                    <Text style={styles.newDiagnosisButtonText}>New Diagnosis</Text>
-                                </TouchableOpacity>
+                            ) : (
+                                <>
+                                    {/* Only show Diagnose button when there are no results */}
+                                    {!predictionResult && (
+                                        <TouchableOpacity 
+                                            style={[
+                                                styles.diagnoseButton, 
+                                                !patientId && styles.disabledButton
+                                            ]} 
+                                            onPress={handleDiagnosePress}
+                                            disabled={!patientId}
+                                        >
+                                            <Text style={styles.diagnoseButtonText}>
+                                                {patientId ? 'Diagnose' : 'Please Login First'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    
+                                    {renderResult()}
+                                    
+                                    {/* Only show New Diagnosis button when there are results */}
+                                    {predictionResult && (
+                                        <TouchableOpacity style={styles.newDiagnosisButton} onPress={handleDiagnosePress}>
+                                            <Text style={styles.newDiagnosisButtonText}>New Diagnosis</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </>
                             )}
                         </View>
                     </View>
@@ -480,6 +446,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#CAD6FF',
+    },
+    disabledButton: {
+        backgroundColor: '#F0F0F0',
+        borderColor: '#DDD',
     },
     diagnoseButtonText: {
         fontSize: 16,

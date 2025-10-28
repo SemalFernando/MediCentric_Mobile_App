@@ -10,7 +10,7 @@ import PrescriptionFormScreen from './src/pages/PrescriptionFormScreen';
 import AllergiesScreen from './src/pages/AllergiesScreen';
 import SetPasswordScreen from './src/pages/SetPasswordScreen';
 import QRCodeScannerScreen from './src/pages/QrScannerScreen';
-import ProfileScreen from './src/pages/ProfileScreen';
+import DoctorProfileScreen from './src/pages/DoctorProfileScreen';
 import LabReportFormScreen from './src/pages/LabReportFormScreen';
 import ScanReportFormScreen from './src/pages/ScanReportFormScreen';
 
@@ -19,6 +19,7 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [scannedPatient, setScannedPatient] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [doctorData, setDoctorData] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -32,14 +33,22 @@ const App = () => {
     return <SplashScreen />;
   }
 
-  // Handle navigation between screens
-  const navigateToHome = () => {
+  // In App.js - Make sure this is correct:
+  const navigateToHome = (doctorDataFromLogin = null) => {
+    console.log('navigateToHome received doctor data:', doctorDataFromLogin);
+
+    if (doctorDataFromLogin) {
+      console.log('Setting doctor data in state:', doctorDataFromLogin);
+      setDoctorData(doctorDataFromLogin);
+    }
+
     setCurrentScreen('home');
   };
 
   const navigateToWelcome = () => {
     setCurrentScreen('welcome');
     setUserRole(null);
+    setDoctorData(null);
   };
 
   const navigateToSetPassword = () => {
@@ -105,8 +114,9 @@ const App = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to profile screen
-  const navigateToProfile = () => {
+  // Navigate to profile screen - ONLY FOR DOCTORS
+  const navigateToProfile = (doctorId = null) => {
+    console.log('Navigating to profile with doctorId:', doctorId);
     setCurrentScreen('profile');
   };
 
@@ -138,6 +148,7 @@ const App = () => {
   const handleLogout = () => {
     setScannedPatient(null);
     setUserRole(null);
+    setDoctorData(null);
     setCurrentScreen('welcome');
   };
 
@@ -161,6 +172,7 @@ const App = () => {
           onNavigateToPrescriptionForm={navigateToPrescriptionForm}
           onNavigateToProfile={navigateToProfile}
           patientData={scannedPatient}
+          doctorData={doctorData} // Pass doctor data directly as prop
         />
       );
     case 'reports':
@@ -233,9 +245,10 @@ const App = () => {
       );
     case 'profile':
       return (
-        <ProfileScreen
+        <DoctorProfileScreen
           onBack={navigateBackFromProfile}
           onLogout={handleLogout}
+          route={{ params: { doctorId: doctorData?.doctorId } }}
         />
       );
     case 'welcome':

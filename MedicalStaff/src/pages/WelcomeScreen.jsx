@@ -13,10 +13,13 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
   const [selectedRole, setSelectedRole] = useState(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
 
-  // Enhanced login handler that navigates based on role
-  const handleLoginSuccess = () => {
+  // Enhanced login handler that navigates based on role AND passes data
+  const handleLoginSuccess = (doctorData = null) => {
+    console.log('WelcomeScreen - handleLoginSuccess received:', doctorData);
+    
     if (selectedRole?.id === 'doctor') {
-      onNavigateToHome();
+      // Pass the doctor data to home screen
+      onNavigateToHome(doctorData);
     } else if (selectedRole?.id === 'radiologist') {
       onNavigateToScanReport();
     } else if (selectedRole?.id === 'lab_technician') {
@@ -45,7 +48,6 @@ const WelcomeScreen = ({ onNavigateToHome, onNavigateToLabReport, onNavigateToSc
     />;
   }
 
-  // In your WelcomeScreen, find the SignUpScreen section and make sure it looks like this:
   if (showSignUp) {
     return <SignUpScreen
       selectedRole={selectedRole}

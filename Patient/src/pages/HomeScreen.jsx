@@ -16,7 +16,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     // Fetch patient data when component mounts - UPDATED LOGIC
     useEffect(() => {
         console.log('HomeScreen - Route params:', route.params);
-        
+
         if (patientDataFromRoute) {
             // If we already have patient data from login, use it directly
             console.log('Using patient data from route:', patientDataFromRoute);
@@ -341,7 +341,10 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
             </ScrollView>
 
             {/* MedBot Floating Button */}
-            <MedBot onDiagnosePress={handleDiagnosePress} />
+            <MedBot
+                onDiagnosePress={handleDiagnosePress}
+                patientId={patientId} // ADD THIS LINE
+            />
         </ScreenWrapper>
     );
 };
