@@ -1,33 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, ActivityIndicator, Modal } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const HomeScreen = ({ 
-  onBack, 
-  onNavigateToQRScanner, 
-  onNavigateToReports, 
-  onNavigateToPrescriptions, 
-  onNavigateToAllergies, 
-  onNavigateToPrescriptionForm, 
-  onNavigateToProfile,
-  route,
-  doctorData: propDoctorData // Receive doctor data as direct prop
+const HomeScreen = ({
+    onBack,
+    onNavigateToQRScanner,
+    onNavigateToReports,
+    onNavigateToPrescriptions,
+    onNavigateToAllergies,
+    onNavigateToPrescriptionForm,
+    onNavigateToProfile,
+    route,
+    doctorData: propDoctorData,
+    patientData // This contains the scanned patient data
 }) => {
     const [activePage, setActivePage] = useState('home');
     const [doctorData, setDoctorData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showEditMedicalDataModal, setShowEditMedicalDataModal] = useState(false);
+    const [medicalFormData, setMedicalFormData] = useState({
+        age: '',
+        thalach: '',
+        oldpeak: '',
+        trestbps: '',
+        bmi: '',
+        chol: '',
+        ca: '0',
+        thal: '3',
+        restecg: '0',
+        cp: '1',
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [fetchingMedicalData, setFetchingMedicalData] = useState(false);
 
     // Get doctor data from props or route params
     const doctorDataFromRoute = route?.params?.doctorData;
-    const BASE_URL = 'http://192.168.1.4:8085';
+    const BASE_URL = 'http://172.16.102.245:8085';
+    const ML_DATA_URL = 'http://172.16.102.245:8089';
 
     // Use doctor data from props first, then from route
     const actualDoctorData = propDoctorData || doctorDataFromRoute;
 
     useEffect(() => {
         console.log('HomeScreen - Received doctor data:', actualDoctorData);
-        console.log('Route params:', route?.params);
-        
+        console.log('HomeScreen - Received patient data:', patientData);
+
         if (actualDoctorData) {
             console.log('Setting doctor data in state:', actualDoctorData);
             setDoctorData(actualDoctorData);
@@ -38,11 +55,64 @@ const HomeScreen = ({
             // Fallback data for demo
             setDoctorData({
                 fullName: 'Dr. John Wick',
-                specialization: 'Cardiology', // Keep the field but don't display it
+                specialization: 'Cardiology',
                 licenseNo: 'MD-2025-481'
             });
         }
-    }, [actualDoctorData]);
+    }, [actualDoctorData, patientData]);
+
+    const fetchMedicalData = async () => {
+        if (!patientData?.patientId) return;
+        
+        setFetchingMedicalData(true);
+        try {
+            console.log('Fetching medical data for patient:', patientData.patientId);
+            const response = await fetch(`${ML_DATA_URL}/health/record/latest?userId=${patientData.patientId}`);
+            
+            if (response.ok) {
+                const existingData = await response.json();
+                console.log('Existing medical data:', existingData);
+                
+                // Update form with existing data
+                setMedicalFormData({
+                    age: existingData.age?.toString() || '',
+                    thalach: existingData.thalach?.toString() || '',
+                    oldpeak: existingData.oldpeak?.toString() || '',
+                    trestbps: existingData.trestbps?.toString() || '',
+                    bmi: existingData.bmi?.toString() || '',
+                    chol: existingData.chol?.toString() || '',
+                    ca: existingData.ca?.toString() || '0',
+                    thal: existingData.thal?.toString() || '3',
+                    restecg: existingData.restecg?.toString() || '0',
+                    cp: existingData.cp?.toString() || '1',
+                });
+            } else if (response.status === 404) {
+                console.log('No existing medical data found for patient');
+                // Reset to default values if no data exists
+                setMedicalFormData({
+                    age: '',
+                    thalach: '',
+                    oldpeak: '',
+                    trestbps: '',
+                    bmi: '',
+                    chol: '',
+                    ca: '0',
+                    thal: '3',
+                    restecg: '0',
+                    cp: '1',
+                });
+            } else {
+                throw new Error(`Failed to fetch medical data: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error fetching medical data:', error);
+            if (!error.message.includes('404')) {
+                Alert.alert('Load Error', 'Could not load existing medical data. You can still enter new data.');
+            }
+        } finally {
+            setFetchingMedicalData(false);
+        }
+    };
 
     const handleQRPress = () => {
         setActivePage('qr');
@@ -87,6 +157,71 @@ const HomeScreen = ({
         }
     };
 
+    const handleEditMedicalDataPress = async () => {
+        if (!patientData?.patientId) {
+            Alert.alert('No Patient', 'Please scan a patient QR code first to edit medical data.');
+            return;
+        }
+        
+        setShowEditMedicalDataModal(true);
+        // Fetch existing medical data when opening the modal
+        await fetchMedicalData();
+    };
+
+    const updateMedicalFormField = (key, value) => {
+        setMedicalFormData({ ...medicalFormData, [key]: value });
+    };
+
+    const handleSaveMedicalData = async () => {
+        if (!patientData?.patientId) {
+            Alert.alert('Error', 'No patient ID available. Please scan a patient QR code first.');
+            return;
+        }
+        
+        if (!medicalFormData.age) {
+            Alert.alert('Error', 'Age is required.');
+            return;
+        }
+        
+        setIsSubmitting(true);
+        try {
+            console.log('Saving medical data for patient:', patientData.patientId);
+            const response = await fetch(`${ML_DATA_URL}/health/record?userId=${patientData.patientId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...medicalFormData,
+                    age: parseInt(medicalFormData.age),
+                    thalach: medicalFormData.thalach ? parseInt(medicalFormData.thalach) : null,
+                    oldpeak: medicalFormData.oldpeak ? parseFloat(medicalFormData.oldpeak) : null,
+                    trestbps: medicalFormData.trestbps ? parseInt(medicalFormData.trestbps) : null,
+                    bmi: medicalFormData.bmi ? parseFloat(medicalFormData.bmi) : null,
+                    chol: medicalFormData.chol ? parseInt(medicalFormData.chol) : null,
+                    ca: parseInt(medicalFormData.ca),
+                    thal: parseInt(medicalFormData.thal),
+                    restecg: parseInt(medicalFormData.restecg),
+                    cp: parseInt(medicalFormData.cp),
+                }),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Save failed with status: ${response.status}`);
+            }
+            
+            Alert.alert('Success', 'Medical data saved successfully!');
+            setShowEditMedicalDataModal(false);
+        } catch (error) {
+            console.error('Save error:', error);
+            Alert.alert('Save Error', error.message || 'Failed to save medical data. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowEditMedicalDataModal(false);
+    };
+
     if (isLoading) {
         return (
             <ScreenWrapper
@@ -129,7 +264,6 @@ const HomeScreen = ({
                                 <Text style={styles.doctorName}>
                                     {doctorData ? doctorData.fullName : 'Doctor'}
                                 </Text>
-                                {/* REMOVED: Specialization display under the name */}
                             </View>
                         </TouchableOpacity>
 
@@ -162,16 +296,34 @@ const HomeScreen = ({
                     <View style={styles.cardsContainer}>
                         {/* Patient Name Card */}
                         <View style={styles.patientCard}>
-                            <Text style={styles.patientTitle}>Patient: Mr. Ryan Ravinathan</Text>
+                            <Text style={styles.patientTitle}>
+                                Patient: {patientData ? `${patientData.fullName || 'Unknown Patient'}` : 'No Patient Selected'}
+                            </Text>
+                            {patientData?.patientId && (
+                                <Text style={styles.patientId}>
+                                    ID: {patientData.patientId.substring(0, 8)}...
+                                </Text>
+                            )}
                         </View>
 
-                        {/* Add New Prescription Button */}
-                        <TouchableOpacity
-                            style={styles.addPrescriptionButton}
-                            onPress={handleAddPrescriptionPress}
-                        >
-                            <Text style={styles.addPrescriptionText}>+ Add new prescription</Text>
-                        </TouchableOpacity>
+                        {/* Split Buttons Container */}
+                        <View style={styles.splitButtonsContainer}>
+                            {/* Left Button - Add Prescription */}
+                            <TouchableOpacity
+                                style={[styles.splitButton, styles.leftButton]}
+                                onPress={handleAddPrescriptionPress}
+                            >
+                                <Text style={styles.splitButtonText}>+ Add New Prescription</Text>
+                            </TouchableOpacity>
+
+                            {/* Right Button - Edit Medical Data */}
+                            <TouchableOpacity
+                                style={[styles.splitButton, styles.rightButton]}
+                                onPress={handleEditMedicalDataPress}
+                            >
+                                <Text style={styles.splitButtonText}>✏️ Edit Medical Data</Text>
+                            </TouchableOpacity>
+                        </View>
 
                         {/* Two Column Layout */}
                         <View style={styles.twoColumnContainer}>
@@ -179,7 +331,9 @@ const HomeScreen = ({
                             <View style={styles.leftColumn}>
                                 {/* Blood Type Card */}
                                 <View style={styles.smallCard}>
-                                    <Text style={styles.bloodTypeText}>Blood Type: O+</Text>
+                                    <Text style={styles.bloodTypeText}>
+                                        Blood Type: {patientData?.bloodType || 'O+'}
+                                    </Text>
                                 </View>
 
                                 {/* Allergies Card */}
@@ -187,18 +341,29 @@ const HomeScreen = ({
                                     <Text style={styles.cardTitle}>Allergies</Text>
                                     <View style={styles.cardDivider} />
                                     <View style={styles.allergiesList}>
-                                        <View style={styles.allergyItem}>
-                                            <Text style={styles.allergyName}>• Penicillin</Text>
-                                            <Text style={styles.allergySeverity}>Severity: Moderate</Text>
-                                        </View>
-                                        <View style={styles.allergyItem}>
-                                            <Text style={styles.allergyName}>• Peanuts</Text>
-                                            <Text style={styles.allergySeverity}>Severity: Severe</Text>
-                                        </View>
-                                        <View style={styles.allergyItem}>
-                                            <Text style={styles.allergyName}>• Aspirin</Text>
-                                            <Text style={styles.allergySeverity}>Severity: Moderate</Text>
-                                        </View>
+                                        {patientData?.allergies && patientData.allergies.length > 0 ? (
+                                            patientData.allergies.map((allergy, index) => (
+                                                <View style={styles.allergyItem} key={index}>
+                                                    <Text style={styles.allergyName}>• {allergy.name}</Text>
+                                                    <Text style={styles.allergySeverity}>Severity: {allergy.severity}</Text>
+                                                </View>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <View style={styles.allergyItem}>
+                                                    <Text style={styles.allergyName}>• Penicillin</Text>
+                                                    <Text style={styles.allergySeverity}>Severity: Moderate</Text>
+                                                </View>
+                                                <View style={styles.allergyItem}>
+                                                    <Text style={styles.allergyName}>• Peanuts</Text>
+                                                    <Text style={styles.allergySeverity}>Severity: Severe</Text>
+                                                </View>
+                                                <View style={styles.allergyItem}>
+                                                    <Text style={styles.allergyName}>• Aspirin</Text>
+                                                    <Text style={styles.allergySeverity}>Severity: Moderate</Text>
+                                                </View>
+                                            </>
+                                        )}
                                     </View>
                                     <TouchableOpacity
                                         style={styles.viewButton}
@@ -216,21 +381,33 @@ const HomeScreen = ({
                                     <Text style={styles.cardTitle}>Recent Lab Reports</Text>
                                     <View style={styles.cardDivider} />
                                     <View style={styles.reportsList}>
-                                        <View style={styles.reportItem}>
-                                            <Text style={styles.reportName}>• Blood Count (FBC)</Text>
-                                            <Text style={styles.reportDetail}>Date: July 10, 2025</Text>
-                                            <Text style={styles.reportDetail}>Status: Normal</Text>
-                                        </View>
-                                        <View style={styles.reportItem}>
-                                            <Text style={styles.reportName}>• Lipid Panel</Text>
-                                            <Text style={styles.reportDetail}>Date: June 28, 2025</Text>
-                                            <Text style={styles.reportDetail}>Status: Elevated</Text>
-                                        </View>
-                                        <View style={styles.reportItem}>
-                                            <Text style={styles.reportName}>• Liver Function Test</Text>
-                                            <Text style={styles.reportDetail}>Date: June 15, 2025</Text>
-                                            <Text style={styles.reportDetail}>Status: Normal</Text>
-                                        </View>
+                                        {patientData?.labReports && patientData.labReports.length > 0 ? (
+                                            patientData.labReports.map((report, index) => (
+                                                <View style={styles.reportItem} key={index}>
+                                                    <Text style={styles.reportName}>• {report.testName}</Text>
+                                                    <Text style={styles.reportDetail}>Date: {report.date}</Text>
+                                                    <Text style={styles.reportDetail}>Status: {report.status}</Text>
+                                                </View>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <View style={styles.reportItem}>
+                                                    <Text style={styles.reportName}>• Blood Count (FBC)</Text>
+                                                    <Text style={styles.reportDetail}>Date: July 10, 2025</Text>
+                                                    <Text style={styles.reportDetail}>Status: Normal</Text>
+                                                </View>
+                                                <View style={styles.reportItem}>
+                                                    <Text style={styles.reportName}>• Lipid Panel</Text>
+                                                    <Text style={styles.reportDetail}>Date: June 28, 2025</Text>
+                                                    <Text style={styles.reportDetail}>Status: Elevated</Text>
+                                                </View>
+                                                <View style={styles.reportItem}>
+                                                    <Text style={styles.reportName}>• Liver Function Test</Text>
+                                                    <Text style={styles.reportDetail}>Date: June 15, 2025</Text>
+                                                    <Text style={styles.reportDetail}>Status: Normal</Text>
+                                                </View>
+                                            </>
+                                        )}
                                     </View>
                                     <TouchableOpacity
                                         style={styles.viewButton}
@@ -244,11 +421,21 @@ const HomeScreen = ({
 
                         {/* Current Medication Card - Full Width */}
                         <View style={styles.medicationCard}>
-                            <Text style={styles.lastPrescription}>• Last Prescription: July 10, 2025</Text>
+                            <Text style={styles.lastPrescription}>
+                                • Last Prescription: {patientData?.lastPrescriptionDate || 'July 10, 2025'}
+                            </Text>
                             <View style={styles.cardDivider} />
                             <View style={styles.medicationList}>
-                                <Text style={styles.medicationItem}>• Ibuprofen</Text>
-                                <Text style={styles.medicationItem}>• Amoxicillin</Text>
+                                {patientData?.currentMedications && patientData.currentMedications.length > 0 ? (
+                                    patientData.currentMedications.map((med, index) => (
+                                        <Text style={styles.medicationItem} key={index}>• {med}</Text>
+                                    ))
+                                ) : (
+                                    <>
+                                        <Text style={styles.medicationItem}>• Ibuprofen</Text>
+                                        <Text style={styles.medicationItem}>• Amoxicillin</Text>
+                                    </>
+                                )}
                             </View>
                             <TouchableOpacity
                                 style={styles.viewPrescriptionsButton}
@@ -337,9 +524,226 @@ const HomeScreen = ({
                     </View>
                 </View>
             </ScrollView>
+
+            {/* Edit Medical Data Modal */}
+            <Modal
+                visible={showEditMedicalDataModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={handleCloseModal}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <ScrollView style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Edit Medical Data</Text>
+                            
+                            {fetchingMedicalData ? (
+                                <View style={styles.loadingSection}>
+                                    <ActivityIndicator size="large" color="#2260FF" />
+                                    <Text style={styles.loadingText}>Loading medical data...</Text>
+                                </View>
+                            ) : (
+                                <>
+                                    {/* Numerical Inputs */}
+                                    <Text style={styles.inputLabel}>Age (29-77 years) *</Text>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={medicalFormData.age}
+                                        onChangeText={(text) => updateMedicalFormField('age', text)}
+                                        keyboardType="numeric"
+                                        placeholder="Enter age"
+                                    />
+
+                                    <Text style={styles.inputLabel}>Max Heart Rate (71-202 bpm)</Text>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={medicalFormData.thalach}
+                                        onChangeText={(text) => updateMedicalFormField('thalach', text)}
+                                        keyboardType="numeric"
+                                        placeholder="Enter max heart rate"
+                                    />
+
+                                    <Text style={styles.inputLabel}>ST Depression (0-6.2)</Text>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={medicalFormData.oldpeak}
+                                        onChangeText={(text) => updateMedicalFormField('oldpeak', text)}
+                                        keyboardType="numeric"
+                                        placeholder="Enter ST depression"
+                                    />
+
+                                    <Text style={styles.inputLabel}>Resting BP (90-200 mmHg)</Text>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={medicalFormData.trestbps}
+                                        onChangeText={(text) => updateMedicalFormField('trestbps', text)}
+                                        keyboardType="numeric"
+                                        placeholder="Enter resting BP"
+                                    />
+
+                                    <Text style={styles.inputLabel}>BMI (15-41)</Text>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={medicalFormData.bmi}
+                                        onChangeText={(text) => updateMedicalFormField('bmi', text)}
+                                        keyboardType="numeric"
+                                        placeholder="Enter BMI"
+                                    />
+
+                                    <Text style={styles.inputLabel}>Cholesterol (120-400 mg/dl)</Text>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={medicalFormData.chol}
+                                        onChangeText={(text) => updateMedicalFormField('chol', text)}
+                                        keyboardType="numeric"
+                                        placeholder="Enter cholesterol"
+                                    />
+
+                                    {/* Categorical Pickers */}
+                                    <Text style={styles.inputLabel}>Chest Pain Type</Text>
+                                    <View style={styles.pickerContainer}>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            <View style={styles.pickerOptions}>
+                                                {[
+                                                    { label: 'Typical Angina', value: '1' },
+                                                    { label: 'Atypical Angina', value: '2' },
+                                                    { label: 'Non-Anginal Pain', value: '3' },
+                                                    { label: 'Asymptomatic', value: '4' }
+                                                ].map((option) => (
+                                                    <TouchableOpacity
+                                                        key={option.value}
+                                                        style={[
+                                                            styles.pickerOption,
+                                                            medicalFormData.cp === option.value && styles.pickerOptionSelected
+                                                        ]}
+                                                        onPress={() => updateMedicalFormField('cp', option.value)}
+                                                    >
+                                                        <Text style={[
+                                                            styles.pickerOptionText,
+                                                            medicalFormData.cp === option.value && styles.pickerOptionTextSelected
+                                                        ]}>
+                                                            {option.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        </ScrollView>
+                                    </View>
+
+                                    <Text style={styles.inputLabel}>ECG Results</Text>
+                                    <View style={styles.pickerContainer}>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            <View style={styles.pickerOptions}>
+                                                {[
+                                                    { label: 'Normal', value: '0' },
+                                                    { label: 'ST-T Abnormality', value: '1' },
+                                                    { label: 'Left Ventricular Hypertrophy', value: '2' }
+                                                ].map((option) => (
+                                                    <TouchableOpacity
+                                                        key={option.value}
+                                                        style={[
+                                                            styles.pickerOption,
+                                                            medicalFormData.restecg === option.value && styles.pickerOptionSelected
+                                                        ]}
+                                                        onPress={() => updateMedicalFormField('restecg', option.value)}
+                                                    >
+                                                        <Text style={[
+                                                            styles.pickerOptionText,
+                                                            medicalFormData.restecg === option.value && styles.pickerOptionTextSelected
+                                                        ]}>
+                                                            {option.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        </ScrollView>
+                                    </View>
+
+                                    <Text style={styles.inputLabel}>Major Vessels</Text>
+                                    <View style={styles.pickerContainer}>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            <View style={styles.pickerOptions}>
+                                                {Array.from({ length: 5 }, (_, i) => (
+                                                    <TouchableOpacity
+                                                        key={i}
+                                                        style={[
+                                                            styles.pickerOption,
+                                                            medicalFormData.ca === i.toString() && styles.pickerOptionSelected
+                                                        ]}
+                                                        onPress={() => updateMedicalFormField('ca', i.toString())}
+                                                    >
+                                                        <Text style={[
+                                                            styles.pickerOptionText,
+                                                            medicalFormData.ca === i.toString() && styles.pickerOptionTextSelected
+                                                        ]}>
+                                                            {i} vessels
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        </ScrollView>
+                                    </View>
+
+                                    <Text style={styles.inputLabel}>Thalassemia</Text>
+                                    <View style={styles.pickerContainer}>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            <View style={styles.pickerOptions}>
+                                                {[
+                                                    { label: 'Normal', value: '3' },
+                                                    { label: 'Fixed Defect', value: '6' },
+                                                    { label: 'Reversible Defect', value: '7' }
+                                                ].map((option) => (
+                                                    <TouchableOpacity
+                                                        key={option.value}
+                                                        style={[
+                                                            styles.pickerOption,
+                                                            medicalFormData.thal === option.value && styles.pickerOptionSelected
+                                                        ]}
+                                                        onPress={() => updateMedicalFormField('thal', option.value)}
+                                                    >
+                                                        <Text style={[
+                                                            styles.pickerOptionText,
+                                                            medicalFormData.thal === option.value && styles.pickerOptionTextSelected
+                                                        ]}>
+                                                            {option.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        </ScrollView>
+                                    </View>
+
+                                    <View style={styles.modalButtons}>
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.cancelButton]}
+                                            onPress={handleCloseModal}
+                                            disabled={isSubmitting}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.saveButton, isSubmitting && styles.buttonDisabled]}
+                                            onPress={handleSaveMedicalData}
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting ? (
+                                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                            ) : (
+                                                <Text style={styles.saveButtonText}>Save Medical Data</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                </>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </ScreenWrapper>
     );
 };
+
+// ... (keep all your existing styles and add these new modal styles)
 
 const styles = StyleSheet.create({
     container: {
@@ -395,7 +799,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: 'black',
     },
-    // REMOVED: specialization style since we're not displaying it anymore
     iconsSection: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
@@ -445,18 +848,36 @@ const styles = StyleSheet.create({
         color: '#2260FF',
         textAlign: 'center',
     },
-    addPrescriptionButton: {
-        width: '100%',
-        backgroundColor: '#2260FF',
-        borderRadius: 12,
-        padding: 10,
-        alignItems: 'center',
-        marginBottom: 15,
+    patientId: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 4,
     },
-    addPrescriptionText: {
-        fontSize: 16,
+    // Split Buttons Styles
+    splitButtonsContainer: {
+        flexDirection: 'row',
+        width: '100%',
+        marginBottom: 15,
+        gap: 10,
+    },
+    splitButton: {
+        flex: 1,
+        borderRadius: 12,
+        padding: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    leftButton: {
+        backgroundColor: '#2260FF',
+    },
+    rightButton: {
+        backgroundColor: '#2260FF',
+    },
+    splitButtonText: {
+        fontSize: 14,
         color: '#FFFFFF',
         fontWeight: '600',
+        textAlign: 'center',
     },
     twoColumnContainer: {
         flexDirection: 'row',
@@ -618,6 +1039,118 @@ const styles = StyleSheet.create({
     },
     inactiveIcon: {
         tintColor: '#FFFFFF',
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: '90%',
+        maxHeight: '80%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        padding: 0,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    modalContent: {
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#2260FF',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    loadingSection: {
+        alignItems: 'center',
+        padding: 20,
+    },
+    inputLabel: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#2260FF',
+        marginBottom: 5,
+        marginTop: 10,
+    },
+    textInput: {
+        borderWidth: 1,
+        borderColor: '#CAD6FF',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        backgroundColor: '#F8FAFF',
+        marginBottom: 5,
+    },
+    pickerContainer: {
+        marginBottom: 15,
+    },
+    pickerOptions: {
+        flexDirection: 'row',
+        gap: 10,
+        paddingVertical: 5,
+    },
+    pickerOption: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: '#ECF1FF',
+        borderWidth: 1,
+        borderColor: '#CAD6FF',
+    },
+    pickerOptionSelected: {
+        backgroundColor: '#2260FF',
+        borderColor: '#2260FF',
+    },
+    pickerOptionText: {
+        fontSize: 14,
+        color: '#2260FF',
+        fontWeight: '500',
+    },
+    pickerOptionTextSelected: {
+        color: '#FFFFFF',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+        gap: 10,
+    },
+    modalButton: {
+        flex: 1,
+        borderRadius: 8,
+        padding: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#FF3B30',
+    },
+    saveButton: {
+        backgroundColor: '#2260FF',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
+    cancelButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    saveButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

@@ -1,8 +1,8 @@
 // Use your computer's IP address instead of localhost
 const BASE_URLS = {
-  doctor: 'http://192.168.1.4:8085', // Replace with your computer's IP
-  radiologist: 'http://192.168.1.4:8086',
-  lab_technician: 'http://192.168.1.4:8087'
+  doctor: 'http://172.16.102.245:8085', // Replace with your computer's IP
+  radiologist: 'http://172.16.102.245:8086',
+  lab_technician: 'http://172.16.102.245:8087'
 };
 
 // Enhanced API call function with better error handling

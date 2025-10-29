@@ -16,7 +16,7 @@ const DoctorProfileScreen = ({ route, onBack, onLogout }) => {
 
   // Get doctorId from navigation params
   const doctorId = route.params?.doctorId;
-  const BASE_URL = 'http://192.168.1.4:8085';
+  const BASE_URL = 'http://172.16.102.245:8085';
 
   // Fetch doctor data from backend
   const fetchDoctorData = async () => {

@@ -71,10 +71,11 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
         }
     };
 
+    // In HomeScreen.jsx - Fix the navigation
     const handlePrescriptionsPress = () => {
-        setActivePage('prescriptions');
+        console.log('Navigating to prescriptions with patient data:', patientData);
         if (onNavigateToPrescriptions) {
-            onNavigateToPrescriptions();
+            onNavigateToPrescriptions(patientData); // Pass patientData here
         }
     };
 

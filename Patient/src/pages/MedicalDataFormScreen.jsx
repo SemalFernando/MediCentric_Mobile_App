@@ -1,34 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const MedicalDataFormScreen = ({ onBack, patientId, route }) => {
-    const [formData, setFormData] = useState({
-        age: '',
-        thalach: '',
-        oldpeak: '',
-        trestbps: '',
-        bmi: '',
-        chol: '',
-        ca: '0',
-        thal: '3',
-        restecg: '0',
-        cp: '1',
-    });
-    const [loading, setLoading] = useState(false);
-    const [fetchingData, setFetchingData] = useState(true);
+const MedicalDataViewScreen = ({ onBack, patientId, route }) => {
+    const [medicalData, setMedicalData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     // Get patientId from props or route params
     const actualPatientId = patientId || route.params?.patientId;
-    const ML_DATA_URL = 'http://10.185.72.247:8089';
+    const ML_DATA_URL = 'http://172.16.102.245:8089';
 
     // Fetch existing medical data when component mounts
     useEffect(() => {
         if (actualPatientId) {
             fetchMedicalData();
         } else {
-            setFetchingData(false);
-            Alert.alert('Error', 'No patient ID available. Please log in.');
+            setError('No patient ID available. Please log in.');
+            setLoading(false);
         }
     }, [actualPatientId]);
 
@@ -38,87 +27,72 @@ const MedicalDataFormScreen = ({ onBack, patientId, route }) => {
             const response = await fetch(`${ML_DATA_URL}/health/record/latest?userId=${actualPatientId}`);
             
             if (response.ok) {
-                const existingData = await response.json();
-                console.log('Existing medical data:', existingData);
-                
-                // Update form with existing data
-                setFormData({
-                    age: existingData.age?.toString() || '',
-                    thalach: existingData.thalach?.toString() || '',
-                    oldpeak: existingData.oldpeak?.toString() || '',
-                    trestbps: existingData.trestbps?.toString() || '',
-                    bmi: existingData.bmi?.toString() || '',
-                    chol: existingData.chol?.toString() || '',
-                    ca: existingData.ca?.toString() || '0',
-                    thal: existingData.thal?.toString() || '3',
-                    restecg: existingData.restecg?.toString() || '0',
-                    cp: existingData.cp?.toString() || '1',
-                });
+                const data = await response.json();
+                console.log('Medical data loaded:', data);
+                setMedicalData(data);
+                setError(null);
             } else if (response.status === 404) {
-                console.log('No existing medical data found for patient');
-                // This is normal - no data exists yet
+                console.log('No medical data found for patient');
+                setMedicalData(null);
+                setError(null);
             } else {
-                throw new Error(`Failed to fetch medical data: ${response.status}`);
+                throw new Error(`Server returned ${response.status}`);
             }
         } catch (error) {
             console.error('Error fetching medical data:', error);
-            // Don't show alert for 404 - it's normal for new patients
-            if (!error.message.includes('404')) {
-                Alert.alert('Load Error', 'Could not load existing medical data. You can still enter new data.');
-            }
-        } finally {
-            setFetchingData(false);
-        }
-    };
-
-    const updateFormField = (key, value) => {
-        setFormData({ ...formData, [key]: value });
-    };
-
-    const handleSave = async () => {
-        if (!actualPatientId) {
-            Alert.alert('Error', 'No patient ID available. Please log in.');
-            return;
-        }
-        if (!formData.age) {
-            Alert.alert('Error', 'Age is required.');
-            return;
-        }
-        setLoading(true);
-        try {
-            console.log('Saving medical data for patient:', actualPatientId);
-            const response = await fetch(`${ML_DATA_URL}/health/record?userId=${actualPatientId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    age: parseInt(formData.age),
-                    thalach: formData.thalach ? parseInt(formData.thalach) : null,
-                    oldpeak: formData.oldpeak ? parseFloat(formData.oldpeak) : null,
-                    trestbps: formData.trestbps ? parseInt(formData.trestbps) : null,
-                    bmi: formData.bmi ? parseFloat(formData.bmi) : null,
-                    chol: formData.chol ? parseInt(formData.chol) : null,
-                    ca: parseInt(formData.ca),
-                    thal: parseInt(formData.thal),
-                    restecg: parseInt(formData.restecg),
-                    cp: parseInt(formData.cp),
-                }),
-            });
-            if (!response.ok) {
-                throw new Error(`Save failed with status: ${response.status}`);
-            }
-            Alert.alert('Success', 'Medical data saved successfully!');
-            onBack();
-        } catch (error) {
-            console.error('Save error:', error);
-            Alert.alert('Save Error', error.message || 'Failed to save medical data. Please try again.');
+            setError('Could not load medical data. Please check your connection and try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    // Format value for display
+    const formatValue = (value) => {
+        if (value === null || value === undefined || value === '' || value === 'null') return 'Not provided';
+        return value.toString();
+    };
+
+    // Get display label for categorical values
+    const getDisplayLabel = (value, type) => {
+        const stringValue = value?.toString();
+        if (!stringValue || stringValue === 'null' || stringValue === '') return 'Not provided';
+        
+        switch (type) {
+            case 'cp':
+                const cpLabels = {
+                    '1': 'Typical Angina',
+                    '2': 'Atypical Angina',
+                    '3': 'Non-Anginal Pain',
+                    '4': 'Asymptomatic'
+                };
+                return cpLabels[stringValue] || `Unknown (${stringValue})`;
+            
+            case 'restecg':
+                const restecgLabels = {
+                    '0': 'Normal',
+                    '1': 'ST-T Abnormality',
+                    '2': 'Left Ventricular Hypertrophy'
+                };
+                return restecgLabels[stringValue] || `Unknown (${stringValue})`;
+            
+            case 'ca':
+                return `${stringValue} vessel${stringValue !== '1' ? 's' : ''}`;
+            
+            case 'thal':
+                const thalLabels = {
+                    '3': 'Normal',
+                    '6': 'Fixed Defect',
+                    '7': 'Reversible Defect'
+                };
+                return thalLabels[stringValue] || `Unknown (${stringValue})`;
+            
+            default:
+                return stringValue;
+        }
+    };
+
     // Show loading while fetching data
-    if (fetchingData) {
+    if (loading) {
         return (
             <ScreenWrapper 
                 backgroundColor="#FFFFFF"
@@ -151,221 +125,126 @@ const MedicalDataFormScreen = ({ onBack, patientId, route }) => {
                     <View style={styles.placeholder} />
                 </View>
 
-                {/* Patient ID Display (for debugging) */}
+                {/* Patient ID Display */}
                 <Text style={styles.patientIdText}>
                     Patient: {actualPatientId ? `${actualPatientId.substring(0, 8)}...` : 'Not logged in'}
                 </Text>
 
-                <Text style={styles.title}>Medical Information</Text>
+                {/* Error State */}
+                {error && (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{error}</Text>
+                        <TouchableOpacity 
+                            style={styles.retryButton}
+                            onPress={fetchMedicalData}
+                        >
+                            <Text style={styles.retryButtonText}>Retry</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
-                {/* Numerical Inputs */}
-                <Text style={styles.inputLabel}>Age (29-77 years) *</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.age}
-                        onChangeText={(text) => updateFormField('age', text)}
-                        keyboardType="numeric"
-                        placeholder="Enter age"
-                        placeholderTextColor="#809CFF"
-                    />
-                </View>
-                <Text style={styles.helperText}>A key risk factor.</Text>
-
-                <Text style={styles.inputLabel}>Max Heart Rate (71-202 bpm)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.thalach}
-                        onChangeText={(text) => updateFormField('thalach', text)}
-                        keyboardType="numeric"
-                        placeholder="Enter max heart rate"
-                        placeholderTextColor="#809CFF"
-                    />
-                </View>
-                <Text style={styles.helperText}>Higher is better for fitness.</Text>
-
-                <Text style={styles.inputLabel}>ST Depression (0-6.2)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.oldpeak}
-                        onChangeText={(text) => updateFormField('oldpeak', text)}
-                        keyboardType="numeric"
-                        placeholder="Enter ST depression"
-                        placeholderTextColor="#809CFF"
-                    />
-                </View>
-                <Text style={styles.helperText}>From exercise test; higher indicates stress.</Text>
-
-                <Text style={styles.inputLabel}>Resting BP (90-200 mmHg)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.trestbps}
-                        onChangeText={(text) => updateFormField('trestbps', text)}
-                        keyboardType="numeric"
-                        placeholder="Enter resting BP"
-                        placeholderTextColor="#809CFF"
-                    />
-                </View>
-
-                <Text style={styles.inputLabel}>BMI (15-41)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.bmi}
-                        onChangeText={(text) => updateFormField('bmi', text)}
-                        keyboardType="numeric"
-                        placeholder="Enter BMI"
-                        placeholderTextColor="#809CFF"
-                    />
-                </View>
-
-                <Text style={styles.inputLabel}>Cholesterol (120-400 mg/dl)</Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.chol}
-                        onChangeText={(text) => updateFormField('chol', text)}
-                        keyboardType="numeric"
-                        placeholder="Enter cholesterol"
-                        placeholderTextColor="#809CFF"
-                    />
-                </View>
-
-                {/* Categorical Pickers */}
-                <Text style={styles.inputLabel}>Chest Pain Type</Text>
-                <View style={styles.pickerContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.pickerOptions}>
-                            {[
-                                { label: 'Typical Angina', value: '1' },
-                                { label: 'Atypical Angina', value: '2' },
-                                { label: 'Non-Anginal Pain', value: '3' },
-                                { label: 'Asymptomatic', value: '4' }
-                            ].map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.pickerOption,
-                                        formData.cp === option.value && styles.pickerOptionSelected
-                                    ]}
-                                    onPress={() => updateFormField('cp', option.value)}
-                                >
-                                    <Text style={[
-                                        styles.pickerOptionText,
-                                        formData.cp === option.value && styles.pickerOptionTextSelected
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-
-                <Text style={styles.inputLabel}>ECG Results</Text>
-                <View style={styles.pickerContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.pickerOptions}>
-                            {[
-                                { label: 'Normal', value: '0' },
-                                { label: 'ST-T Abnormality', value: '1' },
-                                { label: 'Left Ventricular Hypertrophy', value: '2' }
-                            ].map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.pickerOption,
-                                        formData.restecg === option.value && styles.pickerOptionSelected
-                                    ]}
-                                    onPress={() => updateFormField('restecg', option.value)}
-                                >
-                                    <Text style={[
-                                        styles.pickerOptionText,
-                                        formData.restecg === option.value && styles.pickerOptionTextSelected
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-
-                <Text style={styles.inputLabel}>Major Vessels</Text>
-                <View style={styles.pickerContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.pickerOptions}>
-                            {Array.from({ length: 5 }, (_, i) => (
-                                <TouchableOpacity
-                                    key={i}
-                                    style={[
-                                        styles.pickerOption,
-                                        formData.ca === i.toString() && styles.pickerOptionSelected
-                                    ]}
-                                    onPress={() => updateFormField('ca', i.toString())}
-                                >
-                                    <Text style={[
-                                        styles.pickerOptionText,
-                                        formData.ca === i.toString() && styles.pickerOptionTextSelected
-                                    ]}>
-                                        {i} vessels
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-
-                <Text style={styles.inputLabel}>Thalassemia</Text>
-                <View style={styles.pickerContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View style={styles.pickerOptions}>
-                            {[
-                                { label: 'Normal', value: '3' },
-                                { label: 'Fixed Defect', value: '6' },
-                                { label: 'Reversible Defect', value: '7' }
-                            ].map((option) => (
-                                <TouchableOpacity
-                                    key={option.value}
-                                    style={[
-                                        styles.pickerOption,
-                                        formData.thal === option.value && styles.pickerOptionSelected
-                                    ]}
-                                    onPress={() => updateFormField('thal', option.value)}
-                                >
-                                    <Text style={[
-                                        styles.pickerOptionText,
-                                        formData.thal === option.value && styles.pickerOptionTextSelected
-                                    ]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.buttonsContainer}>
-                    <TouchableOpacity 
-                        style={[styles.saveButton, loading && styles.buttonDisabled]} 
-                        onPress={handleSave}
-                        disabled={loading || !actualPatientId}
-                    >
-                        <Text style={styles.saveButtonText}>
-                            {loading ? 'Saving...' : actualPatientId ? 'Save Data' : 'Please Login First'}
+                {/* No Data State */}
+                {!error && !medicalData && (
+                    <View style={styles.noDataContainer}>
+                        <Text style={styles.noDataTitle}>No Medical Data Found</Text>
+                        <Text style={styles.noDataText}>
+                            No medical records have been created for this patient yet.
                         </Text>
-                    </TouchableOpacity>
-                    
+                        <Text style={styles.noDataSubText}>
+                            Medical data will appear here once it has been recorded.
+                        </Text>
+                    </View>
+                )}
+
+                {/* Medical Data Display */}
+                {!error && medicalData && (
+                    <>
+                        <Text style={styles.title}>Medical Information</Text>
+
+                        {/* Numerical Data Display */}
+                        <View style={styles.dataSection}>
+                            <Text style={styles.sectionTitle}>Vital Signs & Measurements</Text>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Age</Text>
+                                <Text style={styles.dataValue}>{formatValue(medicalData.age)} years</Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Max Heart Rate</Text>
+                                <Text style={styles.dataValue}>{formatValue(medicalData.thalach)} bpm</Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>ST Depression</Text>
+                                <Text style={styles.dataValue}>{formatValue(medicalData.oldpeak)}</Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Resting Blood Pressure</Text>
+                                <Text style={styles.dataValue}>{formatValue(medicalData.trestbps)} mmHg</Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>BMI</Text>
+                                <Text style={styles.dataValue}>{formatValue(medicalData.bmi)}</Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Cholesterol</Text>
+                                <Text style={styles.dataValue}>{formatValue(medicalData.chol)} mg/dl</Text>
+                            </View>
+                        </View>
+
+                        {/* Categorical Data Display */}
+                        <View style={styles.dataSection}>
+                            <Text style={styles.sectionTitle}>Diagnostic Information</Text>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Chest Pain Type</Text>
+                                <Text style={styles.dataValue}>
+                                    {getDisplayLabel(medicalData.cp, 'cp')}
+                                </Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>ECG Results</Text>
+                                <Text style={styles.dataValue}>
+                                    {getDisplayLabel(medicalData.restecg, 'restecg')}
+                                </Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Major Vessels</Text>
+                                <Text style={styles.dataValue}>
+                                    {getDisplayLabel(medicalData.ca, 'ca')}
+                                </Text>
+                            </View>
+                            
+                            <View style={styles.dataRow}>
+                                <Text style={styles.dataLabel}>Thalassemia</Text>
+                                <Text style={styles.dataValue}>
+                                    {getDisplayLabel(medicalData.thal, 'thal')}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Last Updated Info */}
+                        <View style={styles.lastUpdatedContainer}>
+                            <Text style={styles.lastUpdatedText}>
+                                Data loaded on: {new Date().toLocaleDateString()}
+                            </Text>
+                        </View>
+                    </>
+                )}
+
+                {/* Back Button */}
+                <View style={styles.buttonsContainer}>
                     <TouchableOpacity 
                         style={styles.backButtonSecondary}
                         onPress={onBack}
-                        disabled={loading}
                     >
-                        <Text style={styles.backButtonText}>Back</Text>
+                        <Text style={styles.backButtonText}>Back to Home</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -417,88 +296,54 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         color: '#2260FF',
     },
-    inputLabel: {
-        fontSize: 16,
+    dataSection: {
+        backgroundColor: '#ECF1FF',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
         fontWeight: '600',
         color: '#2260FF',
-        marginBottom: 5,
-        alignSelf: 'flex-start',
-        marginLeft: 5,
-        marginTop: 15,
+        marginBottom: 15,
+        textAlign: 'center',
     },
-    inputContainer: {
+    dataRow: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ECF1FF',
-        borderRadius: 10,
-        marginBottom: 5,
-        paddingHorizontal: 15,
-        height: 50,
-        backgroundColor: '#ECF1FF',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#CAD6FF',
     },
-    input: {
-        flex: 1,
-        height: '100%',
+    dataLabel: {
         fontSize: 16,
-        color: '#809CFF',
+        fontWeight: '500',
+        color: '#2260FF',
+        flex: 1,
     },
-    helperText: {
+    dataValue: {
+        fontSize: 16,
+        fontWeight: '400',
+        color: '#333',
+        textAlign: 'right',
+        flex: 1,
+    },
+    lastUpdatedContainer: {
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 20,
+    },
+    lastUpdatedText: {
         fontSize: 12,
         color: '#666',
-        marginBottom: 10,
-        marginLeft: 5,
         fontStyle: 'italic',
-    },
-    pickerContainer: {
-        marginBottom: 15,
-    },
-    pickerOptions: {
-        flexDirection: 'row',
-        gap: 10,
-        paddingVertical: 5,
-    },
-    pickerOption: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        backgroundColor: '#ECF1FF',
-        borderWidth: 1,
-        borderColor: '#CAD6FF',
-    },
-    pickerOptionSelected: {
-        backgroundColor: '#2260FF',
-        borderColor: '#2260FF',
-    },
-    pickerOptionText: {
-        fontSize: 14,
-        color: '#2260FF',
-        fontWeight: '500',
-    },
-    pickerOptionTextSelected: {
-        color: '#FFFFFF',
     },
     buttonsContainer: {
         alignItems: 'center',
         marginTop: 20,
         marginBottom: 40,
-    },
-    saveButton: {
-        backgroundColor: '#2260FF',
-        borderRadius: 25,
-        paddingVertical: 15,
-        marginBottom: 15,
-        width: '80%',
-        alignItems: 'center',
-    },
-    buttonDisabled: {
-        backgroundColor: '#809CFF',
-        opacity: 0.6,
-    },
-    saveButtonText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: '600',
     },
     backButtonSecondary: {
         backgroundColor: '#CAD6FF',
@@ -523,6 +368,58 @@ const styles = StyleSheet.create({
         color: '#2260FF',
         fontWeight: '500',
     },
+    errorContainer: {
+        backgroundColor: '#FFECEC',
+        borderRadius: 10,
+        padding: 20,
+        marginVertical: 10,
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#FF3B30',
+        textAlign: 'center',
+        fontWeight: '500',
+        marginBottom: 15,
+    },
+    retryButton: {
+        backgroundColor: '#2260FF',
+        borderRadius: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    retryButtonText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    noDataContainer: {
+        backgroundColor: '#ECF1FF',
+        borderRadius: 10,
+        padding: 30,
+        marginVertical: 10,
+        alignItems: 'center',
+    },
+    noDataTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#2260FF',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    noDataText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 10,
+        lineHeight: 20,
+    },
+    noDataSubText: {
+        fontSize: 14,
+        color: '#999',
+        textAlign: 'center',
+        fontStyle: 'italic',
+    },
 });
 
-export default MedicalDataFormScreen;
+export default MedicalDataViewScreen;

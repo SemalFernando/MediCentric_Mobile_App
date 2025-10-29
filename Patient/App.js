@@ -90,8 +90,9 @@ const App = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to prescriptions screen
-  const navigateToPrescriptions = () => {
+  // Navigate to prescriptions screen - UPDATED: Now accepts patientData parameter
+  const navigateToPrescriptions = (patientDataFromHome = null) => {
+    console.log('navigateToPrescriptions called with:', patientDataFromHome);
     setCurrentScreen('prescriptions');
   };
 
@@ -126,7 +127,7 @@ const App = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to medical data form screen - FIXED
+  // Navigate to medical data form screen
   const navigateToMedicalData = () => {
     setCurrentScreen('medicalData');
   };
@@ -184,7 +185,7 @@ const App = () => {
         <MedicalDataFormScreen
           onBack={navigateBackFromMedicalData}
           patientId={patientId}
-          route={{ params: { patientId } }} // ADDED: route params
+          route={{ params: { patientId } }}
         />
       );
     case 'login':
@@ -225,6 +226,7 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
+          patientData={patientData} // ADDED: pass patientData
         />
       );
     case 'prescriptions':
@@ -234,6 +236,7 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToReports={navigateToReports}
           onNavigateToAllergies={navigateToAllergies}
+          patientData={patientData} // ADDED: This was missing!
         />
       );
     case 'allergies':
@@ -243,6 +246,7 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
+          patientData={patientData} // ADDED: pass patientData
         />
       );
     case 'qrCode':

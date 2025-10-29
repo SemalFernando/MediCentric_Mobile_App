@@ -10,6 +10,7 @@ import {
   Platform,
   TouchableOpacity,
   Image,
+  ActivityIndicator
 } from 'react-native';
 import { Camera } from 'react-native-camera-kit';
 
@@ -17,18 +18,23 @@ const QrScannerScreen = ({
   onBack, 
   onNavigateToHome, 
   onNavigateToPrescriptions, 
-  onNavigateToReports 
+  onNavigateToReports,
+  onPatientScanned
 }) => {
   const [frameHeight, setFrameHeight] = useState(0);
   const [activePage, setActivePage] = useState('qr');
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastScannedCode, setLastScannedCode] = useState(null); // Track last scanned code
+  const [isProcessing, setIsProcessing] = useState(false); // Prevent multiple simultaneous scans
   const laserAnim = useRef(new Animated.Value(0)).current;
+  const PATIENT_BASE_URL = 'http://172.16.102.245:8080'; // Patient service port 8080
+  const DOCTOR_BASE_URL = 'http://172.16.102.245:8085'; // Doctor service port 8085
 
   useEffect(() => {
     if (frameHeight <= 0) return;
 
-    // Animate laser from top to bottom within the frame boundaries
     const laserThickness = 2;
-    const max = Math.max(0, frameHeight - laserThickness - 4); // Proper padding
+    const max = Math.max(0, frameHeight - laserThickness - 4);
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(laserAnim, {
@@ -48,9 +54,214 @@ const QrScannerScreen = ({
     return () => anim.stop();
   }, [frameHeight, laserAnim]);
 
-  const handleReadCode = (event) => {
-    const value = event?.nativeEvent?.codeStringValue ?? 'No data';
-    Alert.alert('QR Code found', value);
+  // Function to fetch patient data by QR code using POST
+  const fetchPatientByQRCode = async (qrCodeData) => {
+    try {
+      setIsLoading(true);
+      console.log('Fetching patient data for QR code:', qrCodeData);
+      
+      // Use POST method with request body to PATIENT service (port 8080)
+      const response = await fetch(`${PATIENT_BASE_URL}/patients/qr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qrCodeData: qrCodeData })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const patientData = await response.json();
+      console.log('Patient data fetched:', patientData);
+      
+      return patientData;
+    } catch (error) {
+      console.error('Error fetching patient data via QR endpoint:', error);
+      
+      // Try the minimal endpoint as fallback
+      try {
+        console.log('Trying minimal endpoint...');
+        const minimalResponse = await fetch(`${PATIENT_BASE_URL}/patients/qr-minimal`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ qrCodeData: qrCodeData })
+        });
+        
+        if (minimalResponse.ok) {
+          const minimalData = await minimalResponse.json();
+          console.log('Minimal patient data fetched:', minimalData);
+          return minimalData;
+        }
+      } catch (minimalError) {
+        console.error('Error fetching minimal patient data:', minimalError);
+      }
+      
+      Alert.alert('Error', `Failed to fetch patient data: ${error.message}`);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Alternative: If you want to extract patientId and use the regular GET endpoint
+  const fetchPatientById = async (patientId) => {
+    try {
+      console.log('Fetching patient by ID:', patientId);
+      const response = await fetch(`${PATIENT_BASE_URL}/patients/${patientId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const patientData = await response.json();
+      console.log('Patient data fetched by ID:', patientData);
+      return patientData;
+    } catch (error) {
+      console.error('Error fetching patient by ID:', error);
+      return null;
+    }
+  };
+
+  const handleReadCode = async (event) => {
+    const qrDataString = event?.nativeEvent?.codeStringValue;
+    
+    if (!qrDataString) {
+      return;
+    }
+
+    // Prevent multiple scans of the same code
+    if (lastScannedCode === qrDataString || isProcessing) {
+      console.log('Skipping duplicate scan or already processing...');
+      return;
+    }
+
+    console.log('QR Code scanned, Raw data:', qrDataString);
+    
+    // Set flags to prevent duplicate processing
+    setLastScannedCode(qrDataString);
+    setIsProcessing(true);
+    
+    try {
+      // Parse the JSON data from QR code
+      const qrData = JSON.parse(qrDataString);
+      console.log('Parsed QR data:', qrData);
+      
+      // Extract the patientId from the QR code data
+      const patientId = qrData.patientId;
+      
+      if (!patientId) {
+        Alert.alert('Error', 'No patient ID found in QR code data');
+        return;
+      }
+
+      console.log('Extracted Patient ID:', patientId);
+      
+      // Show loading
+      setIsLoading(true);
+      
+      // Option 1: Use the QR code POST endpoint (recommended)
+      console.log('Using QR code POST endpoint with full QR data...');
+      const patientData = await fetchPatientByQRCode(qrDataString);
+      
+      // Option 2: If QR endpoint fails, try using patient ID directly with GET
+      if (!patientData) {
+        console.log('QR endpoint failed, trying patient ID GET endpoint...');
+        const patientDataById = await fetchPatientById(patientId);
+        
+        if (patientDataById) {
+          // Pass patient data to parent component
+          if (onPatientScanned) {
+            onPatientScanned(patientDataById);
+          }
+          
+          Alert.alert(
+            'Success', 
+            `Patient data loaded: ${patientDataById.fullName || 'Unknown Patient'}`,
+            [{ text: 'OK', onPress: () => {
+              // Reset scan flags after user acknowledges
+              setTimeout(() => {
+                setLastScannedCode(null);
+                setIsProcessing(false);
+              }, 1000);
+            }}]
+          );
+          return;
+        }
+      } else {
+        // QR endpoint succeeded
+        if (onPatientScanned) {
+          onPatientScanned(patientData);
+        }
+        
+        Alert.alert(
+          'Success', 
+          `Patient data loaded: ${patientData.fullName || 'Unknown Patient'}`,
+          [{ text: 'OK', onPress: () => {
+            // Reset scan flags after user acknowledges
+            setTimeout(() => {
+              setLastScannedCode(null);
+              setIsProcessing(false);
+            }, 1000);
+          }}]
+        );
+        return;
+      }
+      
+      // If both methods failed
+      Alert.alert('Error', 'Failed to load patient data from both endpoints', [{
+        text: 'OK',
+        onPress: () => {
+          // Reset scan flags after user acknowledges error
+          setTimeout(() => {
+            setLastScannedCode(null);
+            setIsProcessing(false);
+          }, 1000);
+        }
+      }]);
+      
+    } catch (error) {
+      console.error('Error processing QR code:', error);
+      
+      // If JSON parsing fails, try to use the raw string directly with QR POST endpoint
+      console.log('JSON parsing failed, trying raw string with QR POST endpoint...');
+      setIsLoading(true);
+      const patientData = await fetchPatientByQRCode(qrDataString);
+      
+      if (patientData) {
+        if (onPatientScanned) {
+          onPatientScanned(patientData);
+        }
+        
+        Alert.alert(
+          'Success', 
+          `Patient data loaded: ${patientData.fullName || 'Unknown Patient'}`,
+          [{ text: 'OK', onPress: () => {
+            // Reset scan flags after user acknowledges
+            setTimeout(() => {
+              setLastScannedCode(null);
+              setIsProcessing(false);
+            }, 1000);
+          }}]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to process QR code data', [{
+          text: 'OK',
+          onPress: () => {
+            // Reset scan flags after user acknowledges error
+            setTimeout(() => {
+              setLastScannedCode(null);
+              setIsProcessing(false);
+            }, 1000);
+          }
+        }]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleHomePress = () => {
@@ -74,6 +285,15 @@ const QrScannerScreen = ({
     }
   };
 
+  // Reset scan flags when leaving the screen
+  const handleBackPress = () => {
+    setLastScannedCode(null);
+    setIsProcessing(false);
+    if (onBack) {
+      onBack();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.root}>
@@ -85,7 +305,10 @@ const QrScannerScreen = ({
               style={styles.qrIcon}
             />
           </View>
-          <Text style={styles.scanningText}>QR code scanning...</Text>
+          <Text style={styles.scanningText}>
+            {isLoading ? 'Loading patient data...' : 'QR code scanning...'}
+          </Text>
+          {isLoading && <ActivityIndicator size="small" color="#2260FF" style={styles.loadingIndicator} />}
         </View>
 
         {/* Second Row - Camera Scanner */}
@@ -95,28 +318,23 @@ const QrScannerScreen = ({
               style={styles.camera}
               scanBarcode={true}
               onReadCode={handleReadCode}
-              showFrame={false} // using custom frame
+              showFrame={false}
               laserColor="red"
               frameColor="white"
             />
 
             {/* Custom overlay */}
             <View pointerEvents="none" style={styles.overlay}>
-              {/* Dimming outside area */}
               <View style={styles.dimBackground} />
-
-              {/* Centered frame + corners - moved up slightly */}
               <View style={styles.frameContainer}>
                 <View
                   style={styles.frame}
                   onLayout={(e) => setFrameHeight(e.nativeEvent.layout.height)}>
-                  {/* Green corners with rounded edges */}
                   <View style={[styles.corner, styles.topLeft]} />
                   <View style={[styles.corner, styles.topRight]} />
                   <View style={[styles.corner, styles.bottomLeft]} />
                   <View style={[styles.corner, styles.bottomRight]} />
 
-                  {/* Animated red laser - properly contained inside frame */}
                   {frameHeight > 0 && (
                     <Animated.View
                       style={[
@@ -223,7 +441,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  // First Row Styles
   firstRow: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
@@ -250,8 +467,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
+    marginBottom: 5,
   },
-  // Second Row Styles
+  loadingIndicator: {
+    marginTop: 5,
+  },
   secondRow: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -277,11 +497,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  // Container to position the frame slightly higher
   frameContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -30, // Move the entire scanning area up
+    marginTop: -30,
   },
   frame: {
     width: '75%',
@@ -292,9 +511,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
-    overflow: 'hidden', // Ensure laser stays inside frame
+    overflow: 'hidden',
   },
-  // Green corners with rounded edges
   corner: {
     position: 'absolute',
     width: 28,
@@ -332,17 +550,15 @@ const styles = StyleSheet.create({
     borderColor: '#00FF00',
     borderBottomRightRadius: 8,
   },
-  // Laser line - properly contained inside frame with exact boundaries
   laser: {
     position: 'absolute',
-    left: 4, // Small padding from left edge
-    right: 4, // Small padding from right edge
+    left: 4,
+    right: 4,
     height: 2,
     backgroundColor: '#ED4D38',
     borderRadius: 2,
-    top: 0, // Start from the very top of the frame
+    top: 0,
   },
-  // Third Row Styles
   thirdRow: {
     backgroundColor: '#FFFFFF',
     padding: 15,

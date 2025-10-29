@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const InitialHomeScreen = ({ onBack, onNavigateToQRScanner }) => {
+const InitialHomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToPrescriptions, onNavigateToReports }) => {
     const [activePage, setActivePage] = useState('home'); // Track the active page
 
     const handleQRPress = () => {
@@ -11,6 +11,25 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner }) => {
         if (onNavigateToQRScanner) {
             onNavigateToQRScanner();
         }
+    };
+
+    const handlePrescriptionsPress = () => {
+        setActivePage('prescription');
+        if (onNavigateToPrescriptions) {
+            onNavigateToPrescriptions();
+        }
+    };
+
+    const handleReportsPress = () => {
+        setActivePage('documents');
+        if (onNavigateToReports) {
+            onNavigateToReports();
+        }
+    };
+
+    const handleHomePress = () => {
+        setActivePage('home');
+        // Home is already active, so no navigation needed
     };
 
     return (
@@ -83,7 +102,7 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner }) => {
                         {/* Home Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('home')}
+                            onPress={handleHomePress}
                         >
                             <Image
                                 source={
@@ -119,7 +138,7 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner }) => {
                         {/* Prescription Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('prescription')}
+                            onPress={handlePrescriptionsPress}
                         >
                             <Image
                                 source={
@@ -137,7 +156,7 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner }) => {
                         {/* Documents Icon */}
                         <TouchableOpacity
                             style={styles.navIcon}
-                            onPress={() => setActivePage('documents')}
+                            onPress={handleReportsPress}
                         >
                             <Image
                                 source={

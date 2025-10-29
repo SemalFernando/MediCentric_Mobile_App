@@ -1,21 +1,164 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const ReportsScreen = ({ 
-    onBack, 
-    onNavigateToHome, 
-    onNavigateToQRScanner, 
+const ReportsScreen = ({
+    onBack,
+    onNavigateToHome,
+    onNavigateToInitialHome,
+    onNavigateToQRScanner,
     onNavigateToPrescriptions,
-    onNavigateToAllergies 
+    onNavigateToAllergies,
+    patientData,
+    route
 }) => {
     const [activePage, setActivePage] = useState('documents');
     const [selectedReport, setSelectedReport] = useState(null);
+    const [patientReports, setPatientReports] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [groupedReports, setGroupedReports] = useState({});
+
+    // Get patient data from props or route params
+    const patientDataFromRoute = route?.params?.patientData;
+    const actualPatientData = patientData || patientDataFromRoute;
+
+    useEffect(() => {
+        console.log('ReportsScreen - Received patient data:', actualPatientData);
+
+        if (actualPatientData?.patientId) {
+            // Fetch lab reports from lab service (port 8083)
+            fetchPatientLabReports(actualPatientData.patientId);
+        } else {
+            // No patient data, clear reports
+            setPatientReports([]);
+            setGroupedReports({});
+        }
+    }, [actualPatientData]);
+
+    // Function to fetch patient lab reports from lab service (port 8083)
+    const fetchPatientLabReports = async (patientId) => {
+        try {
+            setIsLoading(true);
+            console.log('Fetching lab reports for patient:', patientId);
+
+            const response = await fetch(`http://10.185.72.247:8083/patients/${patientId}/lab-reports`);
+
+            if (response.ok) {
+                const labReports = await response.json();
+                console.log('Fetched lab reports:', labReports);
+                setPatientReports(labReports);
+                groupReportsByDate(labReports);
+            } else {
+                console.log('No lab reports found for patient');
+                setPatientReports([]);
+                setGroupedReports({});
+            }
+        } catch (error) {
+            console.error('Error fetching lab reports:', error);
+            setPatientReports([]);
+            setGroupedReports({});
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Group reports by date - using labReportDate
+    const groupReportsByDate = (reports) => {
+        const grouped = {};
+
+        reports.forEach(report => {
+            // Use labReportDate field from your data
+            const reportDate = report.labReportDate || report.date || report.createdAt || new Date().toISOString().split('T')[0];
+            const formattedDate = formatDateForDisplay(reportDate);
+
+            if (!grouped[formattedDate]) {
+                grouped[formattedDate] = [];
+            }
+            grouped[formattedDate].push(report);
+        });
+
+        console.log('Grouped lab reports:', grouped);
+        setGroupedReports(grouped);
+    };
+
+    // Format date to "26th April" format
+    const formatDateForDisplay = (dateString) => {
+        try {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('en-US', { month: 'long' });
+
+            // Add ordinal suffix to day
+            const getOrdinalSuffix = (day) => {
+                if (day > 3 && day < 21) return 'th';
+                switch (day % 10) {
+                    case 1: return 'st';
+                    case 2: return 'nd';
+                    case 3: return 'rd';
+                    default: return 'th';
+                }
+            };
+
+            return `${day}${getOrdinalSuffix(day)} ${month}`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Unknown Date';
+        }
+    };
+
+    // Sort dates in descending order (newest first)
+    const getSortedDates = () => {
+        return Object.keys(groupedReports).sort((a, b) => {
+            try {
+                // Convert display dates back to proper dates for sorting
+                const dateA = new Date(a.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+                const dateB = new Date(b.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+                return dateB - dateA;
+            } catch (error) {
+                return 0;
+            }
+        });
+    };
+
+    // Get test type display name - using labReportType from your form
+    const getTestTypeDisplay = (report) => {
+        return report.labReportType || 'Lab Report';
+    };
+
+    // Get test description - using labReportDescription and comments
+    const getTestDescription = (report, date) => {
+        if (report.labReportDescription) return report.labReportDescription;
+        if (report.comments) return report.comments;
+        if (report.description) return report.description;
+
+        let description = `Lab report from ${date}`;
+        if (report.status) description += ` - Status: ${report.status}`;
+
+        return description;
+    };
+
+    // Get result display - using labReportResults
+    const getResultDisplay = (report) => {
+        if (report.labReportResults) return `Result: ${report.labReportResults}`;
+        if (report.result) return `Result: ${report.result}`;
+        if (report.status) return `Status: ${report.status}`;
+        return null;
+    };
 
     const handleHomePress = () => {
         setActivePage('home');
-        if (onNavigateToHome) {
-            onNavigateToHome();
+
+        // Conditional navigation based on whether patient is scanned
+        if (actualPatientData) {
+            // If patient is scanned, go to patient homepage
+            if (onNavigateToHome) {
+                onNavigateToHome();
+            }
+        } else {
+            // If no patient scanned, go to initial homepage
+            if (onNavigateToInitialHome) {
+                onNavigateToInitialHome();
+            }
         }
     };
 
@@ -43,7 +186,137 @@ const ReportsScreen = ({
     const handleReportPress = (reportId) => {
         setSelectedReport(reportId);
         // Here you can add navigation to detailed report view
+        console.log('Selected report:', reportId);
     };
+
+    // Render loading state
+    if (isLoading) {
+        return (
+            <ScreenWrapper
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2260FF" />
+                    <Text style={styles.loadingText}>Loading lab reports...</Text>
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    // Render empty state when no patient is selected
+    if (!actualPatientData) {
+        return (
+            <ScreenWrapper
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <ScrollView style={styles.container}>
+                    {/* Header Section */}
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                            <Text style={styles.backText}>‹</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.title}>Lab Reports</Text>
+                        <View style={styles.placeholder} />
+                    </View>
+
+                    {/* Empty State */}
+                    <View style={styles.emptyContainer}>
+                        <Image
+                            source={require('../assets/docs-icon2.png')}
+                            style={styles.emptyIcon}
+                        />
+                        <Text style={styles.emptyTitle}>No Patient Selected</Text>
+                        <Text style={styles.emptyDescription}>
+                            Scan a patient's QR code to view their lab reports
+                        </Text>
+                    </View>
+
+                    {/* Navigation Bar */}
+                    <View style={styles.thirdRow}>
+                        <View style={styles.navigationCard}>
+                            {/* Home Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={handleHomePress}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'home'
+                                            ? require('../assets/home-icon1.png')
+                                            : require('../assets/home-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+
+                            {/* QR Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={handleQRPress}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'qr'
+                                            ? require('../assets/qr-icon1.png')
+                                            : require('../assets/qr-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+
+                            {/* Prescription Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={handlePrescriptionsPress}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'prescription'
+                                            ? require('../assets/prescription-icon1.png')
+                                            : require('../assets/prescription-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'prescription' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+
+                            {/* Documents Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={() => setActivePage('documents')}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'documents'
+                                            ? require('../assets/docs-icon1.png')
+                                            : require('../assets/docs-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </ScrollView>
+            </ScreenWrapper>
+        );
+    }
 
     return (
         <ScreenWrapper
@@ -64,10 +337,12 @@ const ReportsScreen = ({
 
                 {/* Date and Filter Row */}
                 <View style={styles.filterRow}>
-                    {/* Date Card */}
-                    <View style={styles.dateCard}>
-                        <Text style={styles.dateText}>26th April</Text>
-                    </View>
+                    {/* Date Card - Show first date if available */}
+                    {getSortedDates().length > 0 && (
+                        <View style={styles.dateCard}>
+                            <Text style={styles.dateText}>{getSortedDates()[0]}</Text>
+                        </View>
+                    )}
 
                     {/* Filter Card */}
                     <View style={styles.filterCard}>
@@ -81,123 +356,68 @@ const ReportsScreen = ({
 
                 {/* Reports List */}
                 <View style={styles.reportsList}>
-                    {/* Report Item 1 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 1 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(1)}
-                    >
-                        <View style={styles.reportIconContainer}>
+                    {getSortedDates().length > 0 ? (
+                        getSortedDates().map((date, dateIndex) => (
+                            <View key={date}>
+                                {/* Date Card for each group */}
+                                {dateIndex > 0 && (
+                                    <View style={[styles.dateCard, styles.secondDateCard]}>
+                                        <Text style={styles.dateText}>{date}</Text>
+                                    </View>
+                                )}
+
+                                {/* Spacing under date card */}
+                                {dateIndex > 0 && <View style={styles.dateCardSpacing} />}
+
+                                {/* Reports for this date */}
+                                {groupedReports[date].map((report, reportIndex) => {
+                                    const resultDisplay = getResultDisplay(report);
+                                    return (
+                                        <TouchableOpacity
+                                            key={report.labReportId || report.id || `report-${reportIndex}`}
+                                            style={[
+                                                styles.reportItem,
+                                                selectedReport === (report.labReportId || report.id) && styles.selectedReportItem
+                                            ]}
+                                            onPress={() => handleReportPress(report.labReportId || report.id)}
+                                        >
+                                            <View style={styles.reportIconContainer}>
+                                                <Image
+                                                    source={require('../assets/docs-icon2.png')}
+                                                    style={styles.docIcon}
+                                                />
+                                            </View>
+                                            <View style={styles.reportContent}>
+                                                <Text style={styles.reportName}>
+                                                    {getTestTypeDisplay(report)}
+                                                </Text>
+                                                <Text style={styles.reportDescription} numberOfLines={2}>
+                                                    {getTestDescription(report, date)}
+                                                </Text>
+                                                {resultDisplay && (
+                                                    <Text style={styles.reportResult}>
+                                                        {resultDisplay}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        ))
+                    ) : (
+                        // Empty state when patient has no reports
+                        <View style={styles.emptyContainer}>
                             <Image
                                 source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
+                                style={styles.emptyIcon}
                             />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Sugar (Glucose) Report</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Measures blood sugar levels to check for diabetes or prediabetes.
+                            <Text style={styles.emptyTitle}>No Lab Reports Available</Text>
+                            <Text style={styles.emptyDescription}>
+                                No lab reports found for {actualPatientData.fullName || 'this patient'}
                             </Text>
                         </View>
-                    </TouchableOpacity>
-
-                    {/* Report Item 2 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 2 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(2)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Complete Blood Count (CBC)</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Evaluates overall health and detects various disorders like anemia, infection.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Report Item 3 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 3 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(3)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Lipid Panel</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Measures cholesterol levels and triglycerides to assess heart disease risk.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Second Date Card */}
-                    <View style={[styles.dateCard, styles.secondDateCard]}>
-                        <Text style={styles.dateText}>19th April</Text>
-                    </View>
-
-                    {/* Spacing under second date card */}
-                    <View style={styles.dateCardSpacing} />
-
-                    {/* Report Item 4 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 4 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(4)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Liver Function Test</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Checks liver health by measuring enzymes, proteins, and substances.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Report Item 5 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.reportItem,
-                            selectedReport === 5 && styles.selectedReportItem
-                        ]}
-                        onPress={() => handleReportPress(5)}
-                    >
-                        <View style={styles.reportIconContainer}>
-                            <Image
-                                source={require('../assets/docs-icon2.png')}
-                                style={styles.docIcon}
-                            />
-                        </View>
-                        <View style={styles.reportContent}>
-                            <Text style={styles.reportName}>Thyroid Function Test</Text>
-                            <Text style={styles.reportDescription} numberOfLines={2}>
-                                Measures thyroid hormone levels to diagnose thyroid disorders.
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Navigation Bar */}
@@ -285,6 +505,43 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFFFFF',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    loadingText: {
+        fontSize: 18,
+        color: '#2260FF',
+        marginTop: 10,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+        marginTop: 50,
+    },
+    emptyIcon: {
+        width: 80,
+        height: 80,
+        tintColor: '#CAD6FF',
+        marginBottom: 20,
+    },
+    emptyTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#2260FF',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    emptyDescription: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 22,
     },
     header: {
         flexDirection: 'row',
@@ -410,6 +667,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         lineHeight: 18,
+    },
+    reportResult: {
+        fontSize: 12,
+        color: '#2260FF',
+        fontWeight: '500',
+        marginTop: 4,
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',

@@ -1,21 +1,156 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
 const PrescriptionsScreen = ({ 
     onBack, 
     onNavigateToHome, 
+    onNavigateToInitialHome,
     onNavigateToQRScanner, 
     onNavigateToReports,
-    onNavigateToAllergies 
+    onNavigateToAllergies,
+    patientData,
+    route
 }) => {
     const [activePage, setActivePage] = useState('prescription');
     const [selectedPrescription, setSelectedPrescription] = useState(null);
+    const [patientPrescriptions, setPatientPrescriptions] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [groupedPrescriptions, setGroupedPrescriptions] = useState({});
+
+    // Get patient data from props or route params
+    const patientDataFromRoute = route?.params?.patientData;
+    const actualPatientData = patientData || patientDataFromRoute;
+
+    useEffect(() => {
+        console.log('PrescriptionsScreen - Received patient data:', actualPatientData);
+
+        if (actualPatientData?.patientId) {
+            // Fetch prescriptions from prescription service (port 8089)
+            fetchPatientPrescriptions(actualPatientData.patientId);
+        } else {
+            // No patient data, clear prescriptions
+            setPatientPrescriptions([]);
+            setGroupedPrescriptions({});
+        }
+    }, [actualPatientData]);
+
+    // Function to fetch patient prescriptions from prescription service (port 8089)
+    const fetchPatientPrescriptions = async (patientId) => {
+        try {
+            setIsLoading(true);
+            console.log('Fetching prescriptions for patient:', patientId);
+
+            const response = await fetch(`http://172.16.102.245:8090/patients/${patientId}/prescriptions`);
+
+            if (response.ok) {
+                const prescriptions = await response.json();
+                console.log('Fetched prescriptions:', prescriptions);
+                setPatientPrescriptions(prescriptions);
+                groupPrescriptionsByDate(prescriptions);
+            } else {
+                console.log('No prescriptions found for patient');
+                setPatientPrescriptions([]);
+                setGroupedPrescriptions({});
+            }
+        } catch (error) {
+            console.error('Error fetching prescriptions:', error);
+            setPatientPrescriptions([]);
+            setGroupedPrescriptions({});
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Group prescriptions by date
+    const groupPrescriptionsByDate = (prescriptions) => {
+        const grouped = {};
+
+        prescriptions.forEach(prescription => {
+            // Use prescription date or createdAt field
+            const prescriptionDate = prescription.prescriptionDate || prescription.date || prescription.createdAt || prescription.issueDate || new Date().toISOString().split('T')[0];
+            const formattedDate = formatDateForDisplay(prescriptionDate);
+
+            if (!grouped[formattedDate]) {
+                grouped[formattedDate] = [];
+            }
+            grouped[formattedDate].push(prescription);
+        });
+
+        console.log('Grouped prescriptions:', grouped);
+        setGroupedPrescriptions(grouped);
+    };
+
+    // Format date to "26th April" format
+    const formatDateForDisplay = (dateString) => {
+        try {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.toLocaleString('en-US', { month: 'long' });
+
+            // Add ordinal suffix to day
+            const getOrdinalSuffix = (day) => {
+                if (day > 3 && day < 21) return 'th';
+                switch (day % 10) {
+                    case 1: return 'st';
+                    case 2: return 'nd';
+                    case 3: return 'rd';
+                    default: return 'th';
+                }
+            };
+
+            return `${day}${getOrdinalSuffix(day)} ${month}`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Unknown Date';
+        }
+    };
+
+    // Sort dates in descending order (newest first)
+    const getSortedDates = () => {
+        return Object.keys(groupedPrescriptions).sort((a, b) => {
+            try {
+                // Convert display dates back to proper dates for sorting
+                const dateA = new Date(a.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+                const dateB = new Date(b.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+                return dateB - dateA;
+            } catch (error) {
+                return 0;
+            }
+        });
+    };
+
+    // Get prescription display name
+    const getPrescriptionDisplay = (prescription) => {
+        return prescription.medicationName || prescription.prescriptionName || prescription.diagnosis || 'Prescription';
+    };
+
+    // Get prescription description
+    const getPrescriptionDescription = (prescription, date) => {
+        if (prescription.dosage) return `Dosage: ${prescription.dosage}`;
+        if (prescription.instructions) return `Instructions: ${prescription.instructions}`;
+        if (prescription.description) return prescription.description;
+
+        let description = `Prescription from ${date}`;
+        if (prescription.status) description += ` - Status: ${prescription.status}`;
+
+        return description;
+    };
 
     const handleHomePress = () => {
         setActivePage('home');
-        if (onNavigateToHome) {
-            onNavigateToHome();
+
+        // Conditional navigation based on whether patient is scanned
+        if (actualPatientData) {
+            // If patient is scanned, go to patient homepage
+            if (onNavigateToHome) {
+                onNavigateToHome();
+            }
+        } else {
+            // If no patient scanned, go to initial homepage
+            if (onNavigateToInitialHome) {
+                onNavigateToInitialHome();
+            }
         }
     };
 
@@ -43,7 +178,137 @@ const PrescriptionsScreen = ({
     const handlePrescriptionPress = (prescriptionId) => {
         setSelectedPrescription(prescriptionId);
         // Here you can add navigation to detailed prescription view
+        console.log('Selected prescription:', prescriptionId);
     };
+
+    // Render loading state
+    if (isLoading) {
+        return (
+            <ScreenWrapper
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2260FF" />
+                    <Text style={styles.loadingText}>Loading prescriptions...</Text>
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    // Render empty state when no patient is selected
+    if (!actualPatientData) {
+        return (
+            <ScreenWrapper
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <ScrollView style={styles.container}>
+                    {/* Header Section */}
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                            <Text style={styles.backText}>‹</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.title}>Prescriptions</Text>
+                        <View style={styles.placeholder} />
+                    </View>
+
+                    {/* Empty State */}
+                    <View style={styles.emptyContainer}>
+                        <Image
+                            source={require('../assets/prescription-icon2.png')}
+                            style={styles.emptyIcon}
+                        />
+                        <Text style={styles.emptyTitle}>No Patient Selected</Text>
+                        <Text style={styles.emptyDescription}>
+                            Scan a patient's QR code to view their prescriptions
+                        </Text>
+                    </View>
+
+                    {/* Navigation Bar */}
+                    <View style={styles.thirdRow}>
+                        <View style={styles.navigationCard}>
+                            {/* Home Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={handleHomePress}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'home'
+                                            ? require('../assets/home-icon1.png')
+                                            : require('../assets/home-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'home' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+
+                            {/* QR Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={handleQRPress}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'qr'
+                                            ? require('../assets/qr-icon1.png')
+                                            : require('../assets/qr-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'qr' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+
+                            {/* Prescription Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={() => setActivePage('prescription')}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'prescription'
+                                            ? require('../assets/prescription-icon1.png')
+                                            : require('../assets/prescription-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'prescription' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+
+                            {/* Documents Icon */}
+                            <TouchableOpacity
+                                style={styles.navIcon}
+                                onPress={handleReportsPress}
+                            >
+                                <Image
+                                    source={
+                                        activePage === 'documents'
+                                            ? require('../assets/docs-icon1.png')
+                                            : require('../assets/docs-icon2.png')
+                                    }
+                                    style={[
+                                        styles.navIconImage,
+                                        activePage === 'documents' ? styles.activeIcon : styles.inactiveIcon
+                                    ]}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </ScrollView>
+            </ScreenWrapper>
+        );
+    }
 
     return (
         <ScreenWrapper
@@ -64,10 +329,12 @@ const PrescriptionsScreen = ({
 
                 {/* Date and Filter Row */}
                 <View style={styles.filterRow}>
-                    {/* Date Card */}
-                    <View style={styles.dateCard}>
-                        <Text style={styles.dateText}>26th April</Text>
-                    </View>
+                    {/* Date Card - Show first date if available */}
+                    {getSortedDates().length > 0 && (
+                        <View style={styles.dateCard}>
+                            <Text style={styles.dateText}>{getSortedDates()[0]}</Text>
+                        </View>
+                    )}
 
                     {/* Filter Card */}
                     <View style={styles.filterCard}>
@@ -81,145 +348,60 @@ const PrescriptionsScreen = ({
 
                 {/* Prescriptions List */}
                 <View style={styles.prescriptionsList}>
-                    {/* Prescription Item 1 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.prescriptionItem,
-                            selectedPrescription === 1 && styles.selectedPrescriptionItem
-                        ]}
-                        onPress={() => handlePrescriptionPress(1)}
-                    >
-                        <View style={styles.prescriptionIconContainer}>
+                    {getSortedDates().length > 0 ? (
+                        getSortedDates().map((date, dateIndex) => (
+                            <View key={date}>
+                                {/* Date Card for each group */}
+                                {dateIndex > 0 && (
+                                    <View style={[styles.dateCard, styles.secondDateCard]}>
+                                        <Text style={styles.dateText}>{date}</Text>
+                                    </View>
+                                )}
+
+                                {/* Spacing under date card */}
+                                {dateIndex > 0 && <View style={styles.dateCardSpacing} />}
+
+                                {/* Prescriptions for this date */}
+                                {groupedPrescriptions[date].map((prescription, prescriptionIndex) => (
+                                    <TouchableOpacity
+                                        key={prescription.id || prescription.prescriptionId || `prescription-${prescriptionIndex}`}
+                                        style={[
+                                            styles.prescriptionItem,
+                                            selectedPrescription === (prescription.id || prescription.prescriptionId) && styles.selectedPrescriptionItem
+                                        ]}
+                                        onPress={() => handlePrescriptionPress(prescription.id || prescription.prescriptionId)}
+                                    >
+                                        <View style={styles.prescriptionIconContainer}>
+                                            <Image
+                                                source={require('../assets/prescription-icon2.png')}
+                                                style={styles.prescriptionIcon}
+                                            />
+                                        </View>
+                                        <View style={styles.prescriptionContent}>
+                                            <Text style={styles.prescriptionName}>
+                                                {getPrescriptionDisplay(prescription)}
+                                            </Text>
+                                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
+                                                {getPrescriptionDescription(prescription, date)}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        ))
+                    ) : (
+                        // Empty state when patient has no prescriptions
+                        <View style={styles.emptyContainer}>
                             <Image
                                 source={require('../assets/prescription-icon2.png')}
-                                style={styles.prescriptionIcon}
+                                style={styles.emptyIcon}
                             />
-                        </View>
-                        <View style={styles.prescriptionContent}>
-                            <Text style={styles.prescriptionName}>Diabetes Checkup</Text>
-                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
-                                Type: Metabolic
+                            <Text style={styles.emptyTitle}>No Prescriptions Available</Text>
+                            <Text style={styles.emptyDescription}>
+                                No prescriptions found for {actualPatientData.fullName || 'this patient'}
                             </Text>
                         </View>
-                    </TouchableOpacity>
-
-                    {/* Prescription Item 2 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.prescriptionItem,
-                            selectedPrescription === 2 && styles.selectedPrescriptionItem
-                        ]}
-                        onPress={() => handlePrescriptionPress(2)}
-                    >
-                        <View style={styles.prescriptionIconContainer}>
-                            <Image
-                                source={require('../assets/prescription-icon2.png')}
-                                style={styles.prescriptionIcon}
-                            />
-                        </View>
-                        <View style={styles.prescriptionContent}>
-                            <Text style={styles.prescriptionName}>Back Pain Treatment</Text>
-                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
-                                Type: Musculoskeletal
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Prescription Item 3 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.prescriptionItem,
-                            selectedPrescription === 3 && styles.selectedPrescriptionItem
-                        ]}
-                        onPress={() => handlePrescriptionPress(3)}
-                    >
-                        <View style={styles.prescriptionIconContainer}>
-                            <Image
-                                source={require('../assets/prescription-icon2.png')}
-                                style={styles.prescriptionIcon}
-                            />
-                        </View>
-                        <View style={styles.prescriptionContent}>
-                            <Text style={styles.prescriptionName}>Hypertension Management</Text>
-                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
-                                Type: Cardiovascular
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* NEW Prescription Item 4 - Added under first date card */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.prescriptionItem,
-                            selectedPrescription === 4 && styles.selectedPrescriptionItem
-                        ]}
-                        onPress={() => handlePrescriptionPress(4)}
-                    >
-                        <View style={styles.prescriptionIconContainer}>
-                            <Image
-                                source={require('../assets/prescription-icon2.png')}
-                                style={styles.prescriptionIcon}
-                            />
-                        </View>
-                        <View style={styles.prescriptionContent}>
-                            <Text style={styles.prescriptionName}>Common Cold Treatment</Text>
-                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
-                                Type: Respiratory
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Second Date Card */}
-                    <View style={[styles.dateCard, styles.secondDateCard]}>
-                        <Text style={styles.dateText}>19th April</Text>
-                    </View>
-
-                    {/* Spacing under second date card */}
-                    <View style={styles.dateCardSpacing} />
-
-                    {/* Prescription Item 5 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.prescriptionItem,
-                            selectedPrescription === 5 && styles.selectedPrescriptionItem
-                        ]}
-                        onPress={() => handlePrescriptionPress(5)}
-                    >
-                        <View style={styles.prescriptionIconContainer}>
-                            <Image
-                                source={require('../assets/prescription-icon2.png')}
-                                style={styles.prescriptionIcon}
-                            />
-                        </View>
-                        <View style={styles.prescriptionContent}>
-                            <Text style={styles.prescriptionName}>Allergy Relief</Text>
-                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
-                                Type: Immunological
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Prescription Item 6 */}
-                    <TouchableOpacity 
-                        style={[
-                            styles.prescriptionItem,
-                            selectedPrescription === 6 && styles.selectedPrescriptionItem
-                        ]}
-                        onPress={() => handlePrescriptionPress(6)}
-                    >
-                        <View style={styles.prescriptionIconContainer}>
-                            <Image
-                                source={require('../assets/prescription-icon2.png')}
-                                style={styles.prescriptionIcon}
-                            />
-                        </View>
-                        <View style={styles.prescriptionContent}>
-                            <Text style={styles.prescriptionName}>Anxiety Treatment</Text>
-                            <Text style={styles.prescriptionDescription} numberOfLines={2}>
-                                Type: Neurological
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Navigation Bar */}
@@ -307,6 +489,43 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFFFFF',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    loadingText: {
+        fontSize: 18,
+        color: '#2260FF',
+        marginTop: 10,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+        marginTop: 50,
+    },
+    emptyIcon: {
+        width: 80,
+        height: 80,
+        tintColor: '#CAD6FF',
+        marginBottom: 20,
+    },
+    emptyTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#2260FF',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    emptyDescription: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 22,
     },
     header: {
         flexDirection: 'row',

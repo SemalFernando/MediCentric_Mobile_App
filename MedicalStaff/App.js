@@ -33,22 +33,24 @@ const App = () => {
     return <SplashScreen />;
   }
 
-  // In App.js - Make sure this is correct:
-  const navigateToHome = (doctorDataFromLogin = null) => {
-    console.log('navigateToHome received doctor data:', doctorDataFromLogin);
+  // Navigation functions
+  const navigateToInitialHome = (doctorDataFromLogin = null) => {
+    console.log('navigateToInitialHome received doctor data:', doctorDataFromLogin);
 
     if (doctorDataFromLogin) {
       console.log('Setting doctor data in state:', doctorDataFromLogin);
       setDoctorData(doctorDataFromLogin);
     }
 
-    setCurrentScreen('home');
+    setScannedPatient(null); // Clear any previous patient data
+    setCurrentScreen('initialHome');
   };
 
   const navigateToWelcome = () => {
     setCurrentScreen('welcome');
     setUserRole(null);
     setDoctorData(null);
+    setScannedPatient(null);
   };
 
   const navigateToSetPassword = () => {
@@ -64,17 +66,20 @@ const App = () => {
   };
 
   const navigateBackFromQR = () => {
-    setCurrentScreen('home');
+    // Always go back to initial home when back button pressed in QR scanner
+    setCurrentScreen('initialHome');
   };
 
-  // Navigate to patient home screen after QR scan
+  // Navigate to patient home screen after QR scan - THIS IS THE KEY FUNCTION
   const navigateToPatientHome = (patientData) => {
+    console.log('Navigating to patient home with data:', patientData);
     setScannedPatient(patientData);
-    setCurrentScreen('home');
+    setCurrentScreen('home'); // This navigates to the patient homepage, NOT initial homepage
   };
 
-  // Navigate back from patient home to initial home
-  const navigateBackToHome = () => {
+  // Navigate back from patient home to initial home (when back button pressed in patient home)
+  const navigateBackToInitialHome = () => {
+    setScannedPatient(null);
     setCurrentScreen('initialHome');
   };
 
@@ -159,76 +164,86 @@ const App = () => {
         <InitialHomeScreen
           onBack={navigateToWelcome}
           onNavigateToQRScanner={navigateToQRScanner}
+          onNavigateToPrescriptions={navigateToPrescriptions}
+          onNavigateToReports={navigateToReports}
         />
       );
     case 'home':
       return (
         <HomeScreen
-          onBack={navigateBackToHome}
+          onBack={navigateBackToInitialHome} // Back goes to initial home
           onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
           onNavigateToPrescriptionForm={navigateToPrescriptionForm}
           onNavigateToProfile={navigateToProfile}
-          patientData={scannedPatient}
+          patientData={scannedPatient} // Pass scanned patient data
           doctorData={doctorData} // Pass doctor data directly as prop
         />
       );
+    // In App.js, update the ReportsScreen case:
     case 'reports':
       return (
         <ReportsScreen
           onBack={navigateBackFromReports}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={() => setCurrentScreen('home')}
+          onNavigateToInitialHome={() => setCurrentScreen('initialHome')} // Add this
           onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
+          patientData={scannedPatient}
         />
       );
+    // In App.js, update the PrescriptionsScreen case:
     case 'prescriptions':
       return (
         <PrescriptionsScreen
           onBack={navigateBackFromPrescriptions}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={() => setCurrentScreen('home')}
+          onNavigateToInitialHome={() => setCurrentScreen('initialHome')}
           onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToAllergies={navigateToAllergies}
-          onNavigateToPrescriptionForm={navigateToPrescriptionForm}
+          patientData={scannedPatient}
         />
       );
     case 'allergies':
       return (
         <AllergiesScreen
           onBack={navigateBackFromAllergies}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={() => setCurrentScreen('home')}
           onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
+          patientData={scannedPatient}
         />
       );
     case 'prescriptionForm':
       return (
         <PrescriptionFormScreen
           onBack={navigateBackFromPrescriptionForm}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={() => setCurrentScreen('home')}
           onNavigateToQRScanner={navigateToQRScanner}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
+          patientData={scannedPatient}
+          doctorData={doctorData}
         />
       );
     case 'labReport':
       return (
         <LabReportFormScreen
           onBack={navigateBackFromLabReport}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={navigateToInitialHome}
         />
       );
     case 'scanReport':
       return (
         <ScanReportFormScreen
           onBack={navigateBackFromScanReport}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={navigateToInitialHome}
         />
       );
     case 'setPassword':
@@ -237,8 +252,8 @@ const App = () => {
       return (
         <QRCodeScannerScreen
           onBack={navigateBackFromQR}
-          onPatientScanned={navigateToPatientHome}
-          onNavigateToHome={navigateToHome}
+          onPatientScanned={navigateToPatientHome} // This navigates to patient homepage
+          onNavigateToHome={() => setCurrentScreen('home')}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToReports={navigateToReports}
         />
@@ -249,13 +264,14 @@ const App = () => {
           onBack={navigateBackFromProfile}
           onLogout={handleLogout}
           route={{ params: { doctorId: doctorData?.doctorId } }}
+          doctorData={doctorData}
         />
       );
     case 'welcome':
     default:
       return (
         <WelcomeScreen
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={navigateToInitialHome} // Login goes to initial home
           onNavigateToSetPassword={navigateToSetPassword}
           onNavigateToLabReport={navigateToLabReport}
           onNavigateToScanReport={navigateToScanReport}

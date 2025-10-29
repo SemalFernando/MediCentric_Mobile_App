@@ -199,7 +199,9 @@ const PrescriptionFormScreen = ({
     onBack, 
     onNavigateToHome, 
     onNavigateToQRScanner, 
-    onNavigateToReports 
+    onNavigateToReports,
+    patientData,
+    doctorData 
 }) => {
     const [issueDate] = useState(new Date());
     const [reviewDate, setReviewDate] = useState(null);
@@ -209,9 +211,9 @@ const PrescriptionFormScreen = ({
     const [tempDate, setTempDate] = useState('');
     const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
 
-    // UPDATED: Changed baseUrl to use your IP and port 8089
-    const baseUrl = 'http://192.168.1.4:8089';
-    const patientId = 'P1234';
+    // UPDATED: Get patientId from scanned patient data
+    const baseUrl = 'http://172.16.102.245:8090'; // Changed back to port 8080 for prescriptions
+    const patientId = patientData?.patientId; // Get from scanned patient
 
     // Format date for display
     const formatDate = useCallback((date) => {
@@ -315,6 +317,12 @@ const PrescriptionFormScreen = ({
             return;
         }
 
+        // Check if we have patient data
+        if (!patientId) {
+            Alert.alert('Error', 'No patient selected. Please scan a patient QR code first.');
+            return;
+        }
+
         let finalReviewDate = reviewDate;
         
         // If no review date but we have temp date, try to parse it
@@ -351,15 +359,17 @@ const PrescriptionFormScreen = ({
         try {
             setLoading(true);
             
-            // UPDATED: Changed to match your backend API structure
+            // UPDATED: Enhanced prescription data with medicationName
             const prescriptionData = {
-                doctorId: "dr_123", // Using the same doctorId from your Postman tests
+                doctorId: doctorData?.doctorId || "dr_123", // Use actual doctor ID if available
+                medicationName: medicationList.trim().split('\n')[0] || "Prescription", // Use first line as medication name
                 nextReviewDate: dateToTimestamp(finalReviewDate), // Convert to timestamp
-                category: "Antibiotics", // Using category from your Postman tests
+                category: "General", // Default category
                 notes: medicationList.trim()
             };
 
             console.log('Sending prescription data:', prescriptionData);
+            console.log('Patient ID:', patientId);
             console.log('URL:', `${baseUrl}/patients/${patientId}/prescriptions`);
 
             const response = await fetch(`${baseUrl}/patients/${patientId}/prescriptions`, {
@@ -379,14 +389,22 @@ const PrescriptionFormScreen = ({
             const result = await response.json();
             console.log('Prescription added successfully:', result);
             
-            Alert.alert('Success', 'Prescription added successfully!', [
-                { text: 'OK', onPress: () => {
-                    setMedicationList('');
-                    setReviewDate(null);
-                    setTempDate('');
-                    if (onBack) onBack();
-                }}
-            ]);
+            // NEW: Show QR code information
+            Alert.alert(
+                'Success', 
+                `Prescription added successfully!\n\nQR Code has been generated for this prescription.\n\nPrescription ID: ${result.prescriptionId}`,
+                [
+                    { 
+                        text: 'OK', 
+                        onPress: () => {
+                            setMedicationList('');
+                            setReviewDate(null);
+                            setTempDate('');
+                            if (onBack) onBack();
+                        }
+                    }
+                ]
+            );
 
         } catch (error) {
             console.error('Error adding prescription:', error);
@@ -412,6 +430,16 @@ const PrescriptionFormScreen = ({
                     <Text style={styles.title}>New Prescription</Text>
                     <View style={styles.placeholder} />
                 </View>
+
+                {/* Patient Info Display */}
+                {patientData && (
+                    <View style={styles.patientInfoCard}>
+                        <Text style={styles.patientInfoTitle}>Patient Information</Text>
+                        <Text style={styles.patientInfoText}>Name: {patientData.fullName}</Text>
+                        <Text style={styles.patientInfoText}>ID: {patientData.patientId}</Text>
+                        <Text style={styles.patientInfoText}>Blood Type: {patientData.bloodType || 'Not specified'}</Text>
+                    </View>
+                )}
 
                 {/* Form Fields */}
                 <View style={styles.formContainer}>
@@ -481,7 +509,7 @@ const PrescriptionFormScreen = ({
                         disabled={loading}
                     >
                         <Text style={styles.addButtonText}>
-                            {loading ? 'Adding...' : 'Add Prescription'}
+                            {loading ? 'Adding...' : 'Add Prescription & Generate QR'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -498,7 +526,7 @@ const PrescriptionFormScreen = ({
     );
 };
 
-// Keep all your existing styles the same
+// Updated styles - added patient info card styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -533,6 +561,27 @@ const styles = StyleSheet.create({
     },
     placeholder: {
         width: 24,
+    },
+    // NEW: Patient Info Card Styles
+    patientInfoCard: {
+        backgroundColor: '#F8F9FF',
+        marginHorizontal: 20,
+        marginBottom: 20,
+        padding: 15,
+        borderRadius: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: '#2260FF',
+    },
+    patientInfoTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#2260FF',
+        marginBottom: 8,
+    },
+    patientInfoText: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 4,
     },
     formContainer: {
         paddingHorizontal: 20,
@@ -611,7 +660,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
-    // Date Picker Styles
+    // Date Picker Styles (keep the same)
     modalContainer: {
         flex: 1,
         justifyContent: 'center',

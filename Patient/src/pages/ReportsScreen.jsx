@@ -18,7 +18,7 @@ const ReportsScreen = ({
     const [error, setError] = useState(null);
 
     // Configuration - Updated with your specific values
-    const BASE_URL = 'http://10.185.72.247:8083';
+    const BASE_URL = 'http://172.16.102.245:8083';
     const PATIENT_ID = 'P1234';
 
     // Fetch lab reports from backend
