@@ -8,7 +8,7 @@ const AllergiesScreen = ({ onBack }) => {
     const [loading, setLoading] = useState(true);
 
     // Use your computer's IP address instead of localhost
-    const baseUrl = 'http://10.87.143.247:8080'; // Your backend port 8080
+    const baseUrl = 'http://192.168.8.102:8084'; // Your backend port 8080
     const patientId = '101'; // Replace with actual patient ID
 
     // Fetch allergies from backend

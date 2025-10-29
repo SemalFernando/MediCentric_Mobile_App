@@ -27,8 +27,8 @@ const QrScannerScreen = ({
   const [lastScannedCode, setLastScannedCode] = useState(null); // Track last scanned code
   const [isProcessing, setIsProcessing] = useState(false); // Prevent multiple simultaneous scans
   const laserAnim = useRef(new Animated.Value(0)).current;
-  const PATIENT_BASE_URL = 'http://172.16.102.245:8080'; // Patient service port 8080
-  const DOCTOR_BASE_URL = 'http://172.16.102.245:8085'; // Doctor service port 8085
+  const PATIENT_BASE_URL = 'http://192.168.8.102:8080'; // Patient service port 8080
+  const DOCTOR_BASE_URL = 'http://192.168.8.102:8085'; // Doctor service port 8085
 
   useEffect(() => {
     if (frameHeight <= 0) return;

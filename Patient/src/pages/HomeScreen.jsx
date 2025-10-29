@@ -11,7 +11,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     // Get patientId and patientData from route params - KEY CHANGE
     const patientId = route.params?.patientId;
     const patientDataFromRoute = route.params?.patientData; // Get patient data passed from login
-    const BASE_URL = 'http://10.185.72.247:8080';
+    const BASE_URL = 'http://192.168.8.102:8080';
 
     // Fetch patient data when component mounts - UPDATED LOGIC
     useEffect(() => {
@@ -67,7 +67,8 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     const handleReportsPress = () => {
         setActivePage('documents');
         if (onNavigateToReports) {
-            onNavigateToReports();
+            // Pass patientId to reports screen
+            onNavigateToReports(patientId, patientData);
         }
     };
 
@@ -75,13 +76,13 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
     const handlePrescriptionsPress = () => {
         console.log('Navigating to prescriptions with patient data:', patientData);
         if (onNavigateToPrescriptions) {
-            onNavigateToPrescriptions(patientData); // Pass patientData here
+            onNavigateToPrescriptions(patientId, patientData); // Pass patientId and patientData
         }
     };
 
     const handleAllergiesPress = () => {
         if (onNavigateToAllergies) {
-            onNavigateToAllergies();
+            onNavigateToAllergies(patientId, patientData);
         }
     };
 
@@ -93,7 +94,7 @@ const HomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToReports, onNavi
 
     const handleProfilePress = () => {
         if (onNavigateToProfile && patientId) {
-            onNavigateToProfile(patientId);
+            onNavigateToProfile(patientId, patientData);
         }
     };
 

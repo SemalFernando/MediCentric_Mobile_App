@@ -81,8 +81,9 @@ const App = () => {
     setCurrentScreen('setPassword');
   };
 
-  // Navigate to reports screen
-  const navigateToReports = () => {
+  // Navigate to reports screen - UPDATED: Now accepts patientId and patientData parameters
+  const navigateToReports = (patientIdFromHome = null, patientDataFromHome = null) => {
+    console.log('Navigating to reports with patientId:', patientIdFromHome);
     setCurrentScreen('reports');
   };
 
@@ -90,9 +91,9 @@ const App = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to prescriptions screen - UPDATED: Now accepts patientData parameter
-  const navigateToPrescriptions = (patientDataFromHome = null) => {
-    console.log('navigateToPrescriptions called with:', patientDataFromHome);
+  // Navigate to prescriptions screen - UPDATED: Now accepts patientId and patientData parameters
+  const navigateToPrescriptions = (patientIdFromHome = null, patientDataFromHome = null) => {
+    console.log('Navigating to prescriptions with patientId:', patientIdFromHome);
     setCurrentScreen('prescriptions');
   };
 
@@ -100,8 +101,9 @@ const App = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to allergies screen
-  const navigateToAllergies = () => {
+  // Navigate to allergies screen - UPDATED: Now accepts patientId and patientData parameters
+  const navigateToAllergies = (patientIdFromHome = null, patientDataFromHome = null) => {
+    console.log('Navigating to allergies with patientId:', patientIdFromHome);
     setCurrentScreen('allergies');
   };
 
@@ -109,8 +111,9 @@ const App = () => {
     setCurrentScreen('home');
   };
 
-  // Navigate to profile screen
-  const navigateToProfile = (patientIdFromHome = null) => {
+  // Navigate to profile screen - UPDATED: Now accepts patientId and patientData parameters
+  const navigateToProfile = (patientIdFromHome = null, patientDataFromHome = null) => {
+    console.log('Navigating to profile with patientId:', patientIdFromHome);
     setCurrentScreen('profile');
   };
 
@@ -226,6 +229,7 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToPrescriptions={navigateToPrescriptions}
           onNavigateToAllergies={navigateToAllergies}
+          patientId={patientId} // ADDED: pass patientId
           patientData={patientData} // ADDED: pass patientData
         />
       );
@@ -236,7 +240,8 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToReports={navigateToReports}
           onNavigateToAllergies={navigateToAllergies}
-          patientData={patientData} // ADDED: This was missing!
+          patientId={patientId} // ADDED: pass patientId
+          patientData={patientData} // ADDED: pass patientData
         />
       );
     case 'allergies':
@@ -246,6 +251,7 @@ const App = () => {
           onNavigateToHome={navigateToHome}
           onNavigateToReports={navigateToReports}
           onNavigateToPrescriptions={navigateToPrescriptions}
+          patientId={patientId} // ADDED: pass patientId
           patientData={patientData} // ADDED: pass patientData
         />
       );

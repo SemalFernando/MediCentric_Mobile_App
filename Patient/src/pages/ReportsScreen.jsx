@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Linking, Alert } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import MedBot from '../components/MedBot';
 
@@ -9,7 +9,9 @@ const ReportsScreen = ({
     onNavigateToQRScanner, 
     onNavigateToPrescriptions,
     onNavigateToAllergies,
-    onNavigateToDiagnose 
+    onNavigateToDiagnose,
+    patientId, // Get patientId from props
+    patientData // Get patientData from props
 }) => {
     const [activePage, setActivePage] = useState('documents');
     const [selectedReport, setSelectedReport] = useState(null);
@@ -17,23 +19,31 @@ const ReportsScreen = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Configuration - Updated with your specific values
+    // Configuration - Use dynamic patientId
     const BASE_URL = 'http://172.16.102.245:8083';
-    const PATIENT_ID = 'P1234';
 
     // Fetch lab reports from backend
     const fetchLabReports = async () => {
+        // Check if patientId is available
+        if (!patientId) {
+            setError('Patient ID not available. Please log in again.');
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
             
-            const response = await fetch(`${BASE_URL}/patients/${PATIENT_ID}/lab-reports`);
+            console.log(`Fetching lab reports for patient: ${patientId}`);
+            const response = await fetch(`${BASE_URL}/patients/${patientId}/lab-reports`);
             
             if (!response.ok) {
                 throw new Error(`Failed to fetch lab reports: ${response.status}`);
             }
             
             const reports = await response.json();
+            console.log(`Retrieved ${reports.length} lab reports for patient ${patientId}`);
             setLabReports(reports);
         } catch (err) {
             console.error('Error fetching lab reports:', err);
@@ -43,10 +53,15 @@ const ReportsScreen = ({
         }
     };
 
-    // Load reports when component mounts
+    // Load reports when component mounts or patientId changes
     useEffect(() => {
-        fetchLabReports();
-    }, []);
+        if (patientId) {
+            fetchLabReports();
+        } else {
+            setError('No patient ID found. Please log in again.');
+            setLoading(false);
+        }
+    }, [patientId]); // Add patientId as dependency
 
     const handleHomePress = () => {
         setActivePage('home');
@@ -82,9 +97,40 @@ const ReportsScreen = ({
         }
     };
 
-    const handleReportPress = (reportId) => {
-        setSelectedReport(reportId);
-        // Here you can add navigation to detailed report view
+    // Function to handle report press and open Google Drive file
+    const handleReportPress = async (report) => {
+        setSelectedReport(report.labReportId);
+        
+        if (report.fileUrl) {
+            try {
+                // Check if the URL can be opened
+                const supported = await Linking.canOpenURL(report.fileUrl);
+                
+                if (supported) {
+                    // Open the Google Drive URL in the device's browser
+                    await Linking.openURL(report.fileUrl);
+                } else {
+                    Alert.alert(
+                        'Cannot Open File',
+                        `Unable to open the file URL: ${report.fileUrl}`,
+                        [{ text: 'OK' }]
+                    );
+                }
+            } catch (error) {
+                console.error('Error opening URL:', error);
+                Alert.alert(
+                    'Error',
+                    'Failed to open the file. Please make sure you have a browser installed.',
+                    [{ text: 'OK' }]
+                );
+            }
+        } else {
+            Alert.alert(
+                'No File Available',
+                'This lab report does not have an attached file.',
+                [{ text: 'OK' }]
+            );
+        }
     };
 
     // Function to format date for display (e.g., "25th October")
@@ -96,7 +142,8 @@ const ReportsScreen = ({
             const day = date.getDate();
             const suffix = getDaySuffix(day);
             const month = date.toLocaleString('default', { month: 'long' });
-            return `${day}${suffix} ${month}`;
+            const year = date.getFullYear();
+            return `${day}${suffix} ${month} ${year}`;
         } catch (error) {
             console.error('Error formatting date:', error);
             return 'Invalid date';
@@ -114,6 +161,20 @@ const ReportsScreen = ({
         }
     };
 
+    // Function to format timestamp to readable date
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return 'Date not available';
+        
+        try {
+            // Handle the timestamp format: "October 29, 2025 at 1:03:48 PM UTC+5:30"
+            const date = new Date(timestamp);
+            return formatDateDisplay(date);
+        } catch (error) {
+            console.error('Error formatting timestamp:', error);
+            return 'Invalid date';
+        }
+    };
+
     // Group reports by date (using labReportDate from API)
     const groupReportsByDate = (reports) => {
         const grouped = {};
@@ -126,7 +187,7 @@ const ReportsScreen = ({
                 
                 if (!grouped[dateKey]) {
                     grouped[dateKey] = {
-                        displayDate: formatDateDisplay(report.labReportDate),
+                        displayDate: formatTimestamp(report.labReportDate),
                         reports: []
                     };
                 }
@@ -193,6 +254,16 @@ const ReportsScreen = ({
                     </TouchableOpacity>
                 </View>
 
+                {/* Patient Info Display */}
+                {patientId && (
+                    <View style={styles.patientInfo}>
+                        <Text style={styles.patientIdText}>Patient ID: {patientId}</Text>
+                        {patientData?.fullName && (
+                            <Text style={styles.patientNameText}>Name: {patientData.fullName}</Text>
+                        )}
+                    </View>
+                )}
+
                 {/* Date and Filter Row - Removed the first date card */}
                 <View style={styles.filterRow}>
                     {/* Filter Card only - takes full width */}
@@ -211,7 +282,10 @@ const ReportsScreen = ({
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyStateText}>No lab reports found</Text>
                             <Text style={styles.emptyStateSubText}>
-                                Lab reports will appear here once they are added to your record.
+                                {patientId 
+                                    ? "No lab reports available for your account."
+                                    : "Please log in to view your lab reports."
+                                }
                             </Text>
                         </View>
                     ) : (
@@ -232,13 +306,19 @@ const ReportsScreen = ({
                                             styles.reportItem,
                                             selectedReport === report.labReportId && styles.selectedReportItem
                                         ]}
-                                        onPress={() => handleReportPress(report.labReportId)}
+                                        onPress={() => handleReportPress(report)}
                                     >
                                         <View style={styles.reportIconContainer}>
                                             <Image
                                                 source={require('../assets/docs-icon2.png')}
                                                 style={styles.docIcon}
                                             />
+                                            {/* File indicator icon */}
+                                            {report.fileUrl && (
+                                                <View style={styles.fileIndicator}>
+                                                    <Text style={styles.fileIndicatorText}>📎</Text>
+                                                </View>
+                                            )}
                                         </View>
                                         <View style={styles.reportContent}>
                                             <Text style={styles.reportName}>
@@ -252,9 +332,29 @@ const ReportsScreen = ({
                                                     Results: {report.labReportResults}
                                                 </Text>
                                             )}
-                                            <Text style={styles.reportStatus}>
-                                                Status: {report.status || 'UNKNOWN'}
-                                            </Text>
+                                            {report.category && (
+                                                <Text style={styles.reportCategory} numberOfLines={1}>
+                                                    Category: {report.category}
+                                                </Text>
+                                            )}
+                                            {report.comments && (
+                                                <Text style={styles.reportComments} numberOfLines={1}>
+                                                    Comments: {report.comments}
+                                                </Text>
+                                            )}
+                                            <View style={styles.statusContainer}>
+                                                <Text style={[
+                                                    styles.reportStatus,
+                                                    report.status === 'COMPLETED' && styles.statusCompleted,
+                                                    report.status === 'PENDING' && styles.statusPending,
+                                                    report.status === 'CANCELLED' && styles.statusCancelled
+                                                ]}>
+                                                    Status: {report.status || 'UNKNOWN'}
+                                                </Text>
+                                                {report.fileUrl && (
+                                                    <Text style={styles.viewFileText}>Tap to view file →</Text>
+                                                )}
+                                            </View>
                                         </View>
                                     </TouchableOpacity>
                                 ))}
@@ -384,6 +484,22 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         flex: 1,
     },
+    patientInfo: {
+        paddingHorizontal: 20,
+        marginBottom: 10,
+        alignItems: 'center',
+    },
+    patientIdText: {
+        fontSize: 14,
+        color: '#666',
+        fontStyle: 'italic',
+        marginBottom: 2,
+    },
+    patientNameText: {
+        fontSize: 14,
+        color: '#666',
+        fontStyle: 'italic',
+    },
     filterRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -463,11 +579,27 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
+        position: 'relative',
     },
     docIcon: {
         width: 24,
         height: 24,
         tintColor: '#FFFFFF',
+    },
+    fileIndicator: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        backgroundColor: '#FF6B6B',
+        borderRadius: 8,
+        width: 16,
+        height: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fileIndicatorText: {
+        fontSize: 10,
+        color: '#FFFFFF',
     },
     reportContent: {
         flex: 1,
@@ -490,10 +622,40 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         marginBottom: 2,
     },
+    reportCategory: {
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 2,
+    },
+    reportComments: {
+        fontSize: 12,
+        color: '#666',
+        fontStyle: 'italic',
+        marginBottom: 4,
+    },
+    statusContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+    },
     reportStatus: {
         fontSize: 12,
-        color: '#2260FF',
         fontWeight: '500',
+    },
+    statusCompleted: {
+        color: '#4CAF50',
+    },
+    statusPending: {
+        color: '#FF9800',
+    },
+    statusCancelled: {
+        color: '#F44336',
+    },
+    viewFileText: {
+        fontSize: 10,
+        color: '#2260FF',
+        fontStyle: 'italic',
     },
     thirdRow: {
         backgroundColor: '#FFFFFF',

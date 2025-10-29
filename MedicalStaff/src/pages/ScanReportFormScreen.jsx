@@ -14,7 +14,7 @@ const ScanReportFormScreen = ({ onBack }) => {
     const [category, setCategory] = useState('');
     const [comments, setComments] = useState('');
 
-    const baseUrl = 'http://10.185.72.247:8082';
+    const baseUrl = 'http://192.168.8.102:8082';
     const patientId = 'P123';
 
     // Handle document upload with DocumentPicker - FIXED VERSION FOR OLDER API

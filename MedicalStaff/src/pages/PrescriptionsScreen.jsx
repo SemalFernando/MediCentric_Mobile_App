@@ -41,7 +41,7 @@ const PrescriptionsScreen = ({
             setIsLoading(true);
             console.log('Fetching prescriptions for patient:', patientId);
 
-            const response = await fetch(`http://172.16.102.245:8090/patients/${patientId}/prescriptions`);
+            const response = await fetch(`http://192.168.8.102:8090/patients/${patientId}/prescriptions`);
 
             if (response.ok) {
                 const prescriptions = await response.json();

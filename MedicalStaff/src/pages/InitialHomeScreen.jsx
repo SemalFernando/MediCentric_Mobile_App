@@ -1,13 +1,48 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 
-const InitialHomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToPrescriptions, onNavigateToReports }) => {
-    const [activePage, setActivePage] = useState('home'); // Track the active page
+const InitialHomeScreen = ({ 
+    onBack, 
+    onNavigateToQRScanner, 
+    onNavigateToPrescriptions, 
+    onNavigateToReports, 
+    onNavigateToProfile,
+    route,
+    doctorData: propDoctorData 
+}) => {
+    const [activePage, setActivePage] = useState('home');
+    const [doctorData, setDoctorData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Get doctor data from props or route params
+    const doctorDataFromRoute = route?.params?.doctorData;
+    const BASE_URL = 'http://192.168.8.102:8085';
+
+    // Use doctor data from props first, then from route
+    const actualDoctorData = propDoctorData || doctorDataFromRoute;
+
+    useEffect(() => {
+        console.log('InitialHomeScreen - Received doctor data:', actualDoctorData);
+
+        if (actualDoctorData) {
+            console.log('Setting doctor data in state:', actualDoctorData);
+            setDoctorData(actualDoctorData);
+            setIsLoading(false);
+        } else {
+            console.log('No doctor data received, using fallback');
+            setIsLoading(false);
+            // Fallback data for demo
+            setDoctorData({
+                fullName: 'Dr. John Wick',
+                specialization: 'Cardiology',
+                licenseNo: 'MD-2025-481'
+            });
+        }
+    }, [actualDoctorData]);
 
     const handleQRPress = () => {
         setActivePage('qr');
-        // Navigate to QR scanning page using the prop
         if (onNavigateToQRScanner) {
             onNavigateToQRScanner();
         }
@@ -29,8 +64,33 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToPrescrip
 
     const handleHomePress = () => {
         setActivePage('home');
-        // Home is already active, so no navigation needed
     };
+
+    const handleProfilePress = () => {
+        if (onNavigateToProfile && doctorData?.doctorId) {
+            console.log('Navigating to profile with doctorId:', doctorData.doctorId);
+            onNavigateToProfile(doctorData.doctorId);
+        } else if (onNavigateToProfile) {
+            console.log('Navigating to profile without doctorId');
+            onNavigateToProfile();
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <ScreenWrapper
+                backgroundColor="#FFFFFF"
+                statusBarStyle="dark-content"
+                barStyle="dark-content"
+                translucent={false}
+            >
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#2260FF" />
+                    <Text style={styles.loadingText}>Loading...</Text>
+                </View>
+            </ScreenWrapper>
+        );
+    }
 
     return (
         <ScreenWrapper
@@ -45,16 +105,21 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToPrescrip
                     {/* First Horizontal Row: Profile + Icons */}
                     <View style={styles.firstHorizontalRow}>
                         {/* Left Section: Profile and Welcome */}
-                        <View style={styles.profileSection}>
+                        <TouchableOpacity
+                            style={styles.profileSection}
+                            onPress={handleProfilePress}
+                        >
                             <Image
                                 source={require('../assets/profile-pic.png')}
                                 style={styles.profilePic}
                             />
                             <View style={styles.welcomeText}>
                                 <Text style={styles.welcomeBack}>Welcome back!</Text>
-                                <Text style={styles.doctorName}>Dr. John Wick</Text>
+                                <Text style={styles.doctorName}>
+                                    {doctorData ? doctorData.fullName : 'Doctor'}
+                                </Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
 
                         {/* Right Section: Notification and Settings Icons */}
                         <View style={styles.iconsSection}>
@@ -64,7 +129,10 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToPrescrip
                                     style={styles.icon}
                                 />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconCircle}>
+                            <TouchableOpacity
+                                style={styles.iconCircle}
+                                onPress={handleProfilePress}
+                            >
                                 <Image
                                     source={require('../assets/settings-icon.png')}
                                     style={styles.icon}
@@ -85,7 +153,7 @@ const InitialHomeScreen = ({ onBack, onNavigateToQRScanner, onNavigateToPrescrip
                             <Text style={styles.qrTitle}>Scan Patient QR</Text>
                             <View style={styles.cardDivider} />
                             <Image
-                                source={require('../assets/qr-code-placeholder.png')} // Replace with your QR code image
+                                source={require('../assets/qr-code-placeholder.png')}
                                 style={styles.qrImage}
                                 resizeMode="contain"
                             />
@@ -182,6 +250,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    loadingText: {
+        fontSize: 18,
+        color: '#2260FF',
+        marginTop: 10,
+    },
     firstRow: {
         backgroundColor: '#FFFFFF',
         padding: 20,
@@ -203,6 +282,8 @@ const styles = StyleSheet.create({
         height: 60,
         borderRadius: 30,
         marginRight: 15,
+        borderWidth: 2,
+        borderColor: '#2260FF',
     },
     welcomeText: {
         flex: 1,
@@ -230,8 +311,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 10,
-        borderWidth: 1, // Add border
-        borderColor: 'black', // Black border color
+        borderWidth: 1,
+        borderColor: 'black',
     },
     icon: {
         width: 20,
@@ -258,7 +339,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 30,
         alignItems: 'center',
-        minHeight: 540, // Increased height from 400 to 450
+        minHeight: 540,
         justifyContent: 'space-between',
     },
     qrTitle: {
@@ -275,17 +356,17 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     qrImage: {
-        width: 250, // Increased from 200 to 250
-        height: 250, // Increased from 200 to 250
+        width: 250,
+        height: 250,
         marginVertical: 50,
     },
     scanButton: {
         backgroundColor: '#2260FF',
-        borderRadius: 15, // Decreased from 25 to 15
+        borderRadius: 15,
         paddingVertical: 10,
-        paddingHorizontal: 60, // Increased width by increasing horizontal padding
+        paddingHorizontal: 60,
         marginTop: 10,
-        width: '80%', // Added width percentage for consistent sizing
+        width: '80%',
     },
     scanButtonText: {
         fontSize: 18,

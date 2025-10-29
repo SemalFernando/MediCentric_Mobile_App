@@ -212,7 +212,7 @@ const PrescriptionFormScreen = ({
     const [selectedDateForPicker, setSelectedDateForPicker] = useState(new Date());
 
     // UPDATED: Get patientId from scanned patient data
-    const baseUrl = 'http://172.16.102.245:8090'; // Changed back to port 8080 for prescriptions
+    const baseUrl = 'http://192.168.8.102:8090'; // Changed back to port 8080 for prescriptions
     const patientId = patientData?.patientId; // Get from scanned patient
 
     // Format date for display

@@ -35,8 +35,8 @@ const HomeScreen = ({
 
     // Get doctor data from props or route params
     const doctorDataFromRoute = route?.params?.doctorData;
-    const BASE_URL = 'http://172.16.102.245:8085';
-    const ML_DATA_URL = 'http://172.16.102.245:8089';
+    const BASE_URL = 'http://192.168.8.102:8085';
+    const ML_DATA_URL = 'http://192.168.8.102:8089';
 
     // Use doctor data from props first, then from route
     const actualDoctorData = propDoctorData || doctorDataFromRoute;

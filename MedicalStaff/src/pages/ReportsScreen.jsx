@@ -41,7 +41,7 @@ const ReportsScreen = ({
             setIsLoading(true);
             console.log('Fetching lab reports for patient:', patientId);
 
-            const response = await fetch(`http://10.185.72.247:8083/patients/${patientId}/lab-reports`);
+            const response = await fetch(`http://192.168.8.102:8083/patients/${patientId}/lab-reports`);
 
             if (response.ok) {
                 const labReports = await response.json();
