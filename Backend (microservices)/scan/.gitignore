@@ -1,0 +1,49 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Sensitive credential files
+**/oauth-credentials.json
+**/client_secret_*.json
+**/medicentric-*.json
+**/medi-centric-*.json
+**/firebase-adminsdk-*.json
+
+# OAuth tokens
+**/tokens/
+
+# Ignore build and credential files
+target/
+tokens/
+*.json
+
